@@ -1,0 +1,70 @@
+{
+  "name": "anime-site-client",
+  "version": "1.0.0",
+  "description": "Frontend React приложение для аниме-сайта",
+  "private": true,
+  "dependencies": {
+    "axios": "^1.3.6",
+    "dashjs": "^5.0.3",
+    "date-fns": "^2.29.3",
+    "framer-motion": "^10.12.4",
+    "hls.js": "^1.6.7",
+    "lodash.debounce": "^4.0.8",
+    "plyr": "^3.7.8",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-helmet-async": "^1.3.0",
+    "react-hook-form": "^7.43.9",
+    "react-hot-toast": "^2.4.1",
+    "react-hotkeys-hook": "^5.1.0",
+    "react-intersection-observer": "^9.4.3",
+    "react-lazyload": "^3.2.0",
+    "react-query": "^3.39.3",
+    "react-router-dom": "^6.10.0",
+    "react-virtualized": "^9.22.5",
+    "socket.io-client": "^4.6.1",
+    "styled-components": "^5.3.10",
+    "video.js": "^8.0.4",
+    "videojs-contrib-quality-levels": "^2.0.9",
+    "videojs-http-source-selector": "^1.1.6"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "eslint": "^8.39.0",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^2.8.8",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .js,.jsx",
+    "lint:fix": "eslint src --ext .js,.jsx --fix",
+    "format": "prettier --write src/**/*.{js,jsx,css,md}"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "http://localhost:5000"
+}

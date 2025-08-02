@@ -1,0 +1,32 @@
+{
+  "name": "anime-site",
+  "version": "1.0.0",
+  "description": "Полнофункциональный аниме-сайт с современным адаптивным дизайном",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "test": "concurrently \"cd server && npm test\" \"cd client && npm test\"",
+    "install:all": "cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": [
+    "anime",
+    "react",
+    "nodejs",
+    "mongodb",
+    "video-streaming",
+    "responsive-design"
+  ],
+  "author": "Anime Site Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

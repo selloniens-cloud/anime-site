@@ -1,0 +1,66 @@
+services:
+  # Redis Cache для Python сервиса
+  redis:
+    image: redis:7.0-alpine
+    container_name: python-service-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./logs:/var/log/redis
+    command: redis-server --appendonly yes --logfile /var/log/redis/redis.log
+    networks:
+      - python-service-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Python AniCLI API Service
+  anicli_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: python-service-anicli:latest
+    container_name: python-service-anicli
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=info
+      - UVICORN_WORKERS=4
+      - UVICORN_TIMEOUT=120
+      - CACHE_TTL=3600
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - FASTAPI_ENV=production
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - python-service-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    volumes:
+      - ./logs:/app/logs
+
+# Именованные тома для персистентности данных
+volumes:
+  redis_data:
+    driver: local
+
+# Сеть для изоляции сервисов
+networks:
+  python-service-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

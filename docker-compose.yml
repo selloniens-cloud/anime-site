@@ -1,0 +1,255 @@
+services:
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: anime-site-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - client
+      - server
+    networks:
+      - anime-site-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # React Frontend
+  client:
+    build: 
+      context: ./client
+      dockerfile: Dockerfile
+    image: anime-site-client:latest
+    container_name: anime-site-client
+    restart: unless-stopped
+    expose:
+      - "80"
+    volumes:
+      - ./client/nginx.conf:/etc/nginx/nginx.conf:ro
+      - client_static:/usr/share/nginx/html
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+    depends_on:
+      - server
+    networks:
+      - anime-site-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Node.js Backend API
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      target: production
+    image: anime-site-server:latest
+    container_name: anime-site-server
+    restart: unless-stopped
+    expose:
+      - "5000"
+    volumes:
+      - ./server/uploads:/app/uploads
+      - server_logs:/app/logs
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=5000
+      - MONGODB_URI=mongodb://admin:${MONGO_PASSWORD:-password}@mongodb:27017/anime-site?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - JWT_EXPIRE=${JWT_EXPIRE:-30d}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-token-secret-change-in-production}
+      - JWT_REFRESH_EXPIRE=${JWT_REFRESH_EXPIRE:-7d}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost}
+      - SOCKET_CORS_ORIGIN=${CLIENT_URL:-http://localhost}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-5242880}
+      - UPLOAD_PATH=/app/uploads
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-15}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
+      # External API Keys (опционально)
+      - MAL_CLIENT_ID=${MAL_CLIENT_ID:-}
+      - MAL_CLIENT_SECRET=${MAL_CLIENT_SECRET:-}
+      - ANILIST_CLIENT_ID=${ANILIST_CLIENT_ID:-}
+      - ANILIST_CLIENT_SECRET=${ANILIST_CLIENT_SECRET:-}
+      - KITSU_API_KEY=${KITSU_API_KEY:-}
+      # Email Configuration (опционально)
+      - EMAIL_HOST=${EMAIL_HOST:-}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USER=${EMAIL_USER:-}
+      - EMAIL_PASS=${EMAIL_PASS:-}
+    init: true
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - anime-site-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: anime-site-mongodb
+    restart: unless-stopped
+    expose:
+      - "27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - mongodb_logs:/var/log/mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: anime-site
+    command: ["mongod", "--bind_ip_all"]
+    networks:
+      - anime-site-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis Cache
+  redis:
+    image: redis:7.0-alpine
+    container_name: anime-site-redis
+    restart: unless-stopped
+    user: "root"  # Изменено с 1000:1000 на root
+    expose:
+      - "6379"
+    volumes:
+      - ./logs/redis:/var/log/redis
+      - redis_data:/data
+    command: redis-server --appendonly yes --logfile /var/log/redis/redis.log
+    networks:
+      - anime-site-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring с Prometheus (опционально)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: anime-site-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - anime-site-network
+    profiles:
+      - monitoring
+
+  # Grafana Dashboard (опционально)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: anime-site-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - anime-site-network
+    profiles:
+      - monitoring
+
+  # AniCLI API Service
+  anicli_api:
+    build:
+      context: ./python-service
+      dockerfile: Dockerfile
+    image: anime-site-anicli:latest
+    container_name: anime-site-anicli
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      - PORT=8000
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=info
+      - UVICORN_WORKERS=4
+      - UVICORN_TIMEOUT=120
+      - CACHE_TTL=3600
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - FASTAPI_ENV=production
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - anime-site-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+# Именованные тома для персистентности данных
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  mongodb_logs:
+    driver: local
+  redis_data:
+    driver: local
+  redis_logs:
+    driver: local
+  server_logs:
+    driver: local
+  nginx_logs:
+    driver: local
+  client_static:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# Сеть для изоляции сервисов
+networks:
+  anime-site-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

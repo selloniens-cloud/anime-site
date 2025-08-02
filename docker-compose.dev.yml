@@ -1,0 +1,125 @@
+services:
+  # Node.js Backend для разработки
+  server:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+      target: base
+    image: anime-site-server:dev
+    container_name: anime-site-server-dev
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/app
+      - ./shared:/app/shared
+      - ./server/uploads:/app/uploads
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/anime-site?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=development-jwt-secret-not-for-production
+      - JWT_EXPIRE=30d
+      - JWT_REFRESH_SECRET=development-refresh-secret-not-for-production
+      - JWT_REFRESH_EXPIRE=7d
+      - CLIENT_URL=http://localhost:3000
+      - SOCKET_CORS_ORIGIN=http://localhost:3000
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - anime-site-network
+    command: node server.js
+    init: true
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # React Frontend для разработки
+  client:
+    build: 
+      context: ./client
+      dockerfile: Dockerfile
+      target: build
+    image: anime-site-client:dev
+    container_name: anime-site-client-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - FAST_REFRESH=false
+    networks:
+      - anime-site-network
+    command: npm start
+    init: true
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: anime-site-mongodb-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_dev:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: anime-site
+    networks:
+      - anime-site-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis Cache
+  redis:
+    image: redis:7.0-alpine
+    container_name: anime-site-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - anime-site-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# Тома для разработки
+volumes:
+  mongodb_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+
+# Сеть для разработки
+networks:
+  anime-site-network:
+    driver: bridge
