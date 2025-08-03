@@ -12,6 +12,9 @@ router.get('/updates', anilibriaController.getUpdates);
 // Поиск аниме
 router.get('/search', anilibriaController.search);
 
+// Fallback поиск аниме
+router.get('/search/fallback', anilibriaController.searchFallback);
+
 // Получить случайное аниме
 router.get('/random', anilibriaController.getRandom);
 

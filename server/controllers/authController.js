@@ -78,12 +78,12 @@ class AuthController {
       console.log('🔍 LOGIN DEBUG - Request body:', req.body);
       console.log('🔍 LOGIN DEBUG - Request headers:', req.headers);
       
-      const { identifier, password } = req.body;
-      console.log('🔍 LOGIN DEBUG - Extracted identifier:', identifier);
+      const { email, password } = req.body;
+      console.log('🔍 LOGIN DEBUG - Extracted email:', email);
       console.log('🔍 LOGIN DEBUG - Password provided:', !!password);
 
       // Находим пользователя по email или username
-      const user = await User.findByEmailOrUsername(identifier);
+      const user = await User.findByEmailOrUsername(email);
       console.log('🔍 LOGIN DEBUG - User found:', !!user);
       if (user) {
         console.log('🔍 LOGIN DEBUG - User details:', {

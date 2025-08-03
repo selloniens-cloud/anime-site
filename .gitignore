@@ -103,3 +103,21 @@ Thumbs.db
 
 # Redis dump
 dump.rdb
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Build directories
+dist/
+build/
+
+# Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,30 @@
+services:
+  # Python AniCLI API Service
+  anicli_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: python-service-anicli:latest
+    container_name: python-service-anicli-standalone
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - REDIS_URL=redis://localhost:6379
+      - LOG_LEVEL=info
+      - UVICORN_WORKERS=4
+      - UVICORN_TIMEOUT=120
+      - CACHE_TTL=3600
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - FASTAPI_ENV=development
+    network_mode: host
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    volumes:
+      - ./logs:/app/logs

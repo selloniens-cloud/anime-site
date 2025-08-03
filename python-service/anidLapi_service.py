@@ -27,6 +27,8 @@ REQUEST_COUNT = Counter('anidlapi_requests_total', 'Total requests', ['method', 
 REQUEST_DURATION = Histogram('anidlapi_request_duration_seconds', 'Request duration')
 VIDEO_REQUESTS = Counter('anidlapi_video_requests_total', 'Total video requests', ['anime_id'])
 ERROR_COUNT = Counter('anidlapi_errors_total', 'Total errors', ['error_type'])
+API_SOURCE_COUNT = Counter('anidlapi_api_source_total', 'API source usage', ['source', 'endpoint'])
+ANILIBERTY_REQUESTS = Counter('anidlapi_aniliberty_requests_total', 'Aniliberty API requests', ['endpoint', 'status'])
 
 # Инициализация rate limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -78,7 +80,177 @@ class TTLCache:
 # Глобальный кэш
 cache = TTLCache(ttl=3600)
 
-# Fallback Anilibria API клиент
+# Новый Aniliberty API клиент
+class AnilibertyAPI:
+    def __init__(self):
+        self.base_urls = [
+            "https://aniliberty.top/api/v1",
+            "https://api.anilibria.app/api/v1"
+        ]
+        self.current_base_url = self.base_urls[0]
+    
+    async def _make_request(self, endpoint: str, method: str = "GET", data: dict = None) -> Optional[dict]:
+        """Выполняет HTTP запрос к API с fallback на альтернативный URL"""
+        for base_url in self.base_urls:
+            try:
+                url = f"{base_url}{endpoint}"
+                logger.info(f"Making {method} request to Aniliberty API: {url}")
+                
+                async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                    if method == "POST":
+                        async with session.post(url, json=data, headers={
+                            'Content-Type': 'application/json',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }) as response:
+                            ANILIBERTY_REQUESTS.labels(endpoint=endpoint, status=str(response.status)).inc()
+                            if response.status == 200:
+                                result = await response.json()
+                                logger.info(f"Aniliberty API request successful: {endpoint}")
+                                return result
+                            else:
+                                logger.warning(f"Aniliberty API returned status {response.status} for {endpoint}")
+                    else:
+                        async with session.get(url, headers={
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }) as response:
+                            ANILIBERTY_REQUESTS.labels(endpoint=endpoint, status=str(response.status)).inc()
+                            if response.status == 200:
+                                result = await response.json()
+                                logger.info(f"Aniliberty API request successful: {endpoint}")
+                                return result
+                            else:
+                                logger.warning(f"Aniliberty API returned status {response.status} for {endpoint}")
+            except asyncio.TimeoutError:
+                logger.warning(f"Aniliberty API request timeout for {base_url}{endpoint}")
+                ERROR_COUNT.labels(error_type="aniliberty_timeout").inc()
+            except Exception as e:
+                logger.warning(f"Aniliberty API request failed for {base_url}{endpoint}: {e}")
+                ERROR_COUNT.labels(error_type="aniliberty_request_error").inc()
+                continue
+        
+        logger.error(f"All Aniliberty API endpoints failed for {endpoint}")
+        return None
+    
+    async def search_anime_by_id(self, anime_id: int) -> Optional[dict]:
+        """Поиск аниме по ID через каталог"""
+        try:
+            # Используем POST запрос для поиска с фильтрами
+            search_data = {
+                "page": 1,
+                "limit": 50,
+                "f": {
+                    "search": str(anime_id)  # Попробуем поиск по ID как строке
+                },
+                "include": "id,names,player,episodes"
+            }
+            
+            result = await self._make_request("/anime/catalog/releases", "POST", search_data)
+            if result and 'data' in result and result['data']:
+                # Ищем точное совпадение по ID
+                for anime in result['data']:
+                    if anime.get('id') == anime_id:
+                        return anime
+                # Если точного совпадения нет, возвращаем первый результат
+                return result['data'][0]
+            return None
+        except Exception as e:
+            logger.error(f"Aniliberty search anime by ID error: {e}")
+            return None
+    
+    async def get_episode_video(self, anime_id: int, episode: int) -> Optional[str]:
+        """Получение ссылки на видео эпизода"""
+        try:
+            # Сначала найдем аниме
+            anime_data = await self.search_anime_by_id(anime_id)
+            if not anime_data:
+                return None
+            
+            # Ищем эпизод в данных аниме
+            if 'player' in anime_data and 'list' in anime_data['player']:
+                episodes = anime_data['player']['list']
+                episode_key = str(episode)
+                
+                if episode_key in episodes:
+                    episode_data = episodes[episode_key]
+                    if 'hls' in episode_data:
+                        # Возвращаем лучшее качество
+                        hls_data = episode_data['hls']
+                        if 'fhd' in hls_data and hls_data['fhd']:
+                            return f"https://cache.libria.fun{hls_data['fhd']}"
+                        elif 'hd' in hls_data and hls_data['hd']:
+                            return f"https://cache.libria.fun{hls_data['hd']}"
+                        elif 'sd' in hls_data and hls_data['sd']:
+                            return f"https://cache.libria.fun{hls_data['sd']}"
+            
+            # Альтернативный способ - через episodes API
+            if 'episodes' in anime_data:
+                for ep in anime_data['episodes']:
+                    if ep.get('ordinal') == episode:
+                        episode_id = ep.get('id')
+                        if episode_id:
+                            episode_details = await self._make_request(f"/anime/releases/episodes/{episode_id}")
+                            if episode_details and 'player' in episode_details:
+                                player_data = episode_details['player']
+                                if 'hls' in player_data:
+                                    hls_data = player_data['hls']
+                                    if 'fhd' in hls_data and hls_data['fhd']:
+                                        return f"https://cache.libria.fun{hls_data['fhd']}"
+                                    elif 'hd' in hls_data and hls_data['hd']:
+                                        return f"https://cache.libria.fun{hls_data['hd']}"
+                                    elif 'sd' in hls_data and hls_data['sd']:
+                                        return f"https://cache.libria.fun{hls_data['sd']}"
+            
+            return None
+        except Exception as e:
+            logger.error(f"Aniliberty get episode video error: {e}")
+            return None
+    
+    async def get_episode_qualities(self, anime_id: int, episode: int) -> Optional[Dict]:
+        """Получение доступных качеств видео для эпизода"""
+        try:
+            # Сначала найдем аниме
+            anime_data = await self.search_anime_by_id(anime_id)
+            if not anime_data:
+                return None
+            
+            # Ищем эпизод в данных аниме
+            if 'player' in anime_data and 'list' in anime_data['player']:
+                episodes = anime_data['player']['list']
+                episode_key = str(episode)
+                
+                if episode_key in episodes:
+                    episode_data = episodes[episode_key]
+                    if 'hls' in episode_data:
+                        hls_data = episode_data['hls']
+                        return {
+                            "fhd": hls_data.get('fhd'),
+                            "hd": hls_data.get('hd'),
+                            "sd": hls_data.get('sd')
+                        }
+            
+            # Альтернативный способ - через episodes API
+            if 'episodes' in anime_data:
+                for ep in anime_data['episodes']:
+                    if ep.get('ordinal') == episode:
+                        episode_id = ep.get('id')
+                        if episode_id:
+                            episode_details = await self._make_request(f"/anime/releases/episodes/{episode_id}")
+                            if episode_details and 'player' in episode_details:
+                                player_data = episode_details['player']
+                                if 'hls' in player_data:
+                                    hls_data = player_data['hls']
+                                    return {
+                                        "fhd": hls_data.get('fhd'),
+                                        "hd": hls_data.get('hd'),
+                                        "sd": hls_data.get('sd')
+                                    }
+            
+            return None
+        except Exception as e:
+            logger.error(f"Aniliberty get episode qualities error: {e}")
+            return None
+
+# Fallback Anilibria API клиент (старый)
 class AnilibriaFallback:
     def __init__(self):
         self.base_url = "https://api.anilibria.tv/v3"
@@ -120,6 +292,8 @@ class AnilibriaFallback:
             logger.error(f"Anilibria fallback qualities error: {e}")
         return None
 
+# Инициализация API клиентов
+aniliberty_api = AnilibertyAPI()
 anilibria_fallback = AnilibriaFallback()
 
 # Middleware для метрик
@@ -156,27 +330,43 @@ async def get_video(
         if cached_url:
             logger.info(f"Cache hit for video {anime_id}:{episode}")
         else:
-            # Пытаемся получить через основной API
+            # Пытаемся получить через основной API (AniCLI)
             client = AnimeGo()
             try:
                 video_url = client.get_episode_video(anime_id, episode)
                 if video_url:
                     cache.set(cache_key, video_url)
                     cached_url = video_url
+                    API_SOURCE_COUNT.labels(source="anicli", endpoint="video").inc()
                     logger.info(f"Got video URL from AnimeGo for {anime_id}:{episode}")
                 else:
                     raise Exception("No video URL from AnimeGo")
             except Exception as e:
                 logger.warning(f"AnimeGo failed for {anime_id}:{episode}: {e}")
-                # Fallback на Anilibria
-                fallback_url = await anilibria_fallback.get_episode_video(anime_id, episode)
-                if fallback_url:
-                    cache.set(cache_key, fallback_url)
-                    cached_url = fallback_url
-                    logger.info(f"Got video URL from Anilibria fallback for {anime_id}:{episode}")
-                else:
-                    ERROR_COUNT.labels(error_type="no_video_source").inc()
-                    raise HTTPException(status_code=404, detail="Video not found")
+                
+                # Fallback на новый Aniliberty API
+                try:
+                    aniliberty_url = await aniliberty_api.get_episode_video(anime_id, episode)
+                    if aniliberty_url:
+                        cache.set(cache_key, aniliberty_url)
+                        cached_url = aniliberty_url
+                        API_SOURCE_COUNT.labels(source="aniliberty", endpoint="video").inc()
+                        logger.info(f"Got video URL from Aniliberty API for {anime_id}:{episode}")
+                    else:
+                        raise Exception("No video URL from Aniliberty")
+                except Exception as aniliberty_error:
+                    logger.warning(f"Aniliberty API failed for {anime_id}:{episode}: {aniliberty_error}")
+                    
+                    # Fallback на старый Anilibria API
+                    fallback_url = await anilibria_fallback.get_episode_video(anime_id, episode)
+                    if fallback_url:
+                        cache.set(cache_key, fallback_url)
+                        cached_url = fallback_url
+                        API_SOURCE_COUNT.labels(source="anilibria_old", endpoint="video").inc()
+                        logger.info(f"Got video URL from Anilibria fallback for {anime_id}:{episode}")
+                    else:
+                        ERROR_COUNT.labels(error_type="no_video_source").inc()
+                        raise HTTPException(status_code=404, detail="Video not found")
         
         # Записываем метрику запроса видео
         VIDEO_REQUESTS.labels(anime_id=str(anime_id)).inc()
@@ -229,27 +419,43 @@ async def get_qualities(
             logger.info(f"Cache hit for qualities {anime_id}:{episode}")
             return {"qualities": cached_qualities}
         
-        # Пытаемся получить через основной API
+        # Пытаемся получить через основной API (AniCLI)
         client = AnimeGo()
         try:
             qualities = client.get_episode_qualities(anime_id, episode)
             if qualities:
                 cache.set(cache_key, qualities)
+                API_SOURCE_COUNT.labels(source="anicli", endpoint="qualities").inc()
                 logger.info(f"Got qualities from AnimeGo for {anime_id}:{episode}")
                 return {"qualities": qualities}
             else:
                 raise Exception("No qualities from AnimeGo")
         except Exception as e:
             logger.warning(f"AnimeGo qualities failed for {anime_id}:{episode}: {e}")
-            # Fallback на Anilibria
-            fallback_qualities = await anilibria_fallback.get_episode_qualities(anime_id, episode)
-            if fallback_qualities:
-                cache.set(cache_key, fallback_qualities)
-                logger.info(f"Got qualities from Anilibria fallback for {anime_id}:{episode}")
-                return {"qualities": fallback_qualities}
-            else:
-                ERROR_COUNT.labels(error_type="no_qualities_source").inc()
-                raise HTTPException(status_code=404, detail="Qualities not found")
+            
+            # Fallback на новый Aniliberty API
+            try:
+                aniliberty_qualities = await aniliberty_api.get_episode_qualities(anime_id, episode)
+                if aniliberty_qualities:
+                    cache.set(cache_key, aniliberty_qualities)
+                    API_SOURCE_COUNT.labels(source="aniliberty", endpoint="qualities").inc()
+                    logger.info(f"Got qualities from Aniliberty API for {anime_id}:{episode}")
+                    return {"qualities": aniliberty_qualities}
+                else:
+                    raise Exception("No qualities from Aniliberty")
+            except Exception as aniliberty_error:
+                logger.warning(f"Aniliberty API qualities failed for {anime_id}:{episode}: {aniliberty_error}")
+                
+                # Fallback на старый Anilibria API
+                fallback_qualities = await anilibria_fallback.get_episode_qualities(anime_id, episode)
+                if fallback_qualities:
+                    cache.set(cache_key, fallback_qualities)
+                    API_SOURCE_COUNT.labels(source="anilibria_old", endpoint="qualities").inc()
+                    logger.info(f"Got qualities from Anilibria fallback for {anime_id}:{episode}")
+                    return {"qualities": fallback_qualities}
+                else:
+                    ERROR_COUNT.labels(error_type="no_qualities_source").inc()
+                    raise HTTPException(status_code=404, detail="Qualities not found")
                 
     except HTTPException:
         raise

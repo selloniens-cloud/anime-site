@@ -120,10 +120,12 @@ const authSchemas = {
   }),
 
   login: Joi.object({
-    identifier: Joi.string()
+    email: Joi.string()
+      .email()
       .required()
       .messages({
-        'any.required': 'Email или имя пользователя обязательны'
+        'string.email': 'Введите корректный email адрес',
+        'any.required': 'Email обязателен'
       }),
     
     password: Joi.string()

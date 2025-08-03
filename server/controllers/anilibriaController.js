@@ -6,7 +6,7 @@ const { HTTP_STATUS } = require('../../shared/constants/constants');
  */
 const getPopular = async (req, res) => {
   try {
-    const { limit = 12, page = 1 } = req.query;
+    const { limit = 24, page = 1 } = req.query;
     
     const data = await anilibriaService.getPopular({
       limit: parseInt(limit),
@@ -41,9 +41,9 @@ const getPopular = async (req, res) => {
         year: 2025,
         season: { string: "лето" },
         posters: {
-          small: { url: "/storage/releases/posters/9919/small.jpg" },
-          medium: { url: "/storage/releases/posters/9919/medium.jpg" },
-          original: { url: "/storage/releases/posters/9919/original.jpg" }
+          small: { url: "https://www.anilibria.tv/storage/releases/posters/9919/small.jpg" },
+          medium: { url: "https://www.anilibria.tv/storage/releases/posters/9919/medium.jpg" },
+          original: { url: "https://www.anilibria.tv/storage/releases/posters/9919/original.jpg" }
         },
         player: {
           episodes: { last: 17 },
@@ -75,9 +75,9 @@ const getPopular = async (req, res) => {
         year: 2025,
         season: { string: "лето" },
         posters: {
-          small: { url: "/storage/releases/posters/9988/small.jpg" },
-          medium: { url: "/storage/releases/posters/9988/medium.jpg" },
-          original: { url: "/storage/releases/posters/9988/original.jpg" }
+          small: { url: "https://www.anilibria.tv/storage/releases/posters/9988/small.jpg" },
+          medium: { url: "https://www.anilibria.tv/storage/releases/posters/9988/medium.jpg" },
+          original: { url: "https://www.anilibria.tv/storage/releases/posters/9988/original.jpg" }
         },
         player: {
           episodes: { last: 4 },
@@ -149,9 +149,9 @@ const getUpdates = async (req, res) => {
         year: 2025,
         season: { string: "лето" },
         posters: {
-          small: { url: "/storage/releases/posters/10027/small.jpg" },
-          medium: { url: "/storage/releases/posters/10027/medium.jpg" },
-          original: { url: "/storage/releases/posters/10027/original.jpg" }
+          small: { url: "https://www.anilibria.tv/storage/releases/posters/10027/small.jpg" },
+          medium: { url: "https://www.anilibria.tv/storage/releases/posters/10027/medium.jpg" },
+          original: { url: "https://www.anilibria.tv/storage/releases/posters/10027/original.jpg" }
         },
         player: {
           episodes: { last: 4 },
@@ -183,9 +183,9 @@ const getUpdates = async (req, res) => {
         year: 2025,
         season: { string: "лето" },
         posters: {
-          small: { url: "/storage/releases/posters/9984/small.jpg" },
-          medium: { url: "/storage/releases/posters/9984/medium.jpg" },
-          original: { url: "/storage/releases/posters/9984/original.jpg" }
+          small: { url: "https://www.anilibria.tv/storage/releases/posters/9984/small.jpg" },
+          medium: { url: "https://www.anilibria.tv/storage/releases/posters/9984/medium.jpg" },
+          original: { url: "https://www.anilibria.tv/storage/releases/posters/9984/original.jpg" }
         },
         player: {
           episodes: { last: 5 },
@@ -222,9 +222,9 @@ const getUpdates = async (req, res) => {
  */
 const search = async (req, res) => {
   try {
-    const { 
-      search: query, 
-      limit = 20, 
+    const {
+      search: query,
+      limit = 20,
       page = 1,
       year,
       season,
@@ -267,6 +267,157 @@ const search = async (req, res) => {
       error: {
         message: 'Ошибка при поиске аниме',
         details: error.message
+      }
+    });
+  }
+};
+
+/**
+ * Fallback поиск аниме с расширенными возможностями
+ */
+const searchFallback = async (req, res) => {
+  try {
+    const {
+      query,
+      limit = 20,
+      page = 1,
+      year,
+      season,
+      genres,
+      type
+    } = req.query;
+
+    if (!query || query.trim().length < 1) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        error: {
+          message: 'Поисковый запрос обязателен'
+        }
+      });
+    }
+
+    // Используем метод searchWithFallback для более надежного поиска
+    const result = await anilibriaService.searchWithFallback(
+      query.trim(),
+      parseInt(limit)
+    );
+
+    // Если результат пустой, используем mock данные
+    if (!result.data || result.data.length === 0) {
+      const mockSearchResults = [
+        {
+          id: 9988,
+          names: {
+            ru: "Труська, Чулко и пресвятой Подвяз 2",
+            en: "New Panty & Stocking with Garterbelt",
+            alternative: null
+          },
+          description: "Продолжение приключений двух падших ангелов в Датэн-сити.",
+          type: { string: "TV", episodes: 13 },
+          status: { string: "В работе" },
+          genres: ["Комедия", "Пародия", "Фэнтези", "Экшен"],
+          year: 2025,
+          season: { string: "лето" },
+          posters: {
+            small: { url: "https://www.anilibria.tv/storage/releases/posters/9988/small.jpg" },
+            medium: { url: "https://www.anilibria.tv/storage/releases/posters/9988/medium.jpg" },
+            original: { url: "https://www.anilibria.tv/storage/releases/posters/9988/original.jpg" }
+          },
+          player: {
+            episodes: { last: 4 },
+            list: {
+              "1": {
+                name: "Возвращение",
+                preview: "/storage/releases/episodes/previews/9988/1/preview.jpg",
+                hls: {
+                  fhd: "/videos/media/ts/9988/1/1080/video.m3u8",
+                  hd: "/videos/media/ts/9988/1/720/video.m3u8",
+                  sd: "/videos/media/ts/9988/1/480/video.m3u8"
+                }
+              }
+            }
+          },
+          blocked: { copyrights: false, geoip: false }
+        }
+      ].filter(anime =>
+        anime.names.ru.toLowerCase().includes(query.toLowerCase()) ||
+        anime.names.en.toLowerCase().includes(query.toLowerCase())
+      );
+
+      return res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: mockSearchResults,
+        source: 'mock',
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: mockSearchResults.length
+        }
+      });
+    }
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      data: result.data || [],
+      source: result.source,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: result.total || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error in fallback search:', error);
+    
+    // Возвращаем mock данные при полном отказе API
+    const mockSearchResults = [
+      {
+        id: 9988,
+        names: {
+          ru: "Труська, Чулко и пресвятой Подвяз 2",
+          en: "New Panty & Stocking with Garterbelt",
+          alternative: null
+        },
+        description: "Продолжение приключений двух падших ангелов в Датэн-сити.",
+        type: { string: "TV", episodes: 13 },
+        status: { string: "В работе" },
+        genres: ["Комедия", "Пародия", "Фэнтези", "Экшен"],
+        year: 2025,
+        season: { string: "лето" },
+        posters: {
+          small: { url: "https://www.anilibria.tv/storage/releases/posters/9988/small.jpg" },
+          medium: { url: "https://www.anilibria.tv/storage/releases/posters/9988/medium.jpg" },
+          original: { url: "https://www.anilibria.tv/storage/releases/posters/9988/original.jpg" }
+        },
+        player: {
+          episodes: { last: 4 },
+          list: {
+            "1": {
+              name: "Возвращение",
+              preview: "/storage/releases/episodes/previews/9988/1/preview.jpg",
+              hls: {
+                fhd: "/videos/media/ts/9988/1/1080/video.m3u8",
+                hd: "/videos/media/ts/9988/1/720/video.m3u8",
+                sd: "/videos/media/ts/9988/1/480/video.m3u8"
+              }
+            }
+          }
+        },
+        blocked: { copyrights: false, geoip: false }
+      }
+    ].filter(anime =>
+      anime.names.ru.toLowerCase().includes(query.toLowerCase()) ||
+      anime.names.en.toLowerCase().includes(query.toLowerCase())
+    );
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      data: mockSearchResults,
+      source: 'mock',
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: mockSearchResults.length
       }
     });
   }
@@ -423,6 +574,7 @@ module.exports = {
   getPopular,
   getUpdates,
   search,
+  searchFallback,
   getById,
   getRandom,
   getGenres,

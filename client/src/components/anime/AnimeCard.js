@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { animeService } from '../../services/animeService';
 import { videoService } from '../../services/videoService';
 import toast from 'react-hot-toast';
+import animePlaceholder from '../../assets/images/anime-placeholder.svg';
 
 const CardContainer = styled(motion.div)`
   background: ${props => props.theme.colors.surface};
@@ -48,6 +49,10 @@ const ImagePlaceholder = styled.div`
   justify-content: center;
   color: white;
   font-size: 3rem;
+  background-image: url(${animePlaceholder});
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 `;
 
 const StatusBadge = styled.div`
@@ -244,15 +249,41 @@ const getStatusText = (status) => {
 // Утилита для получения заголовка аниме
 const getAnimeTitle = (anime) => {
   if (typeof anime.title === 'string') return anime.title;
-  return anime.title?.ru || anime.title?.en || anime.title?.romaji || 'Без названия';
+  
+  // Структура AniLibria API
+  if (anime.names?.ru) return anime.names.ru;
+  if (anime.names?.en) return anime.names.en;
+  if (anime.names?.alternative) return anime.names.alternative;
+  
+  // Структура нашей модели
+  if (anime.title?.ru) return anime.title.ru;
+  if (anime.title?.en) return anime.title.en;
+  if (anime.title?.romaji) return anime.title.romaji;
+  if (anime.title?.english) return anime.title.english;
+  if (anime.title?.japanese) return anime.title.japanese;
+  
+  return 'Без названия';
 };
 
 // Утилита для получения постера
 const getAnimePoster = (anime) => {
+  // Прямая ссылка на постер
   if (typeof anime.poster === 'string') return anime.poster;
+  
+  // Структура AniLibria API
+  if (anime.posters?.medium?.url) return anime.posters.medium.url;
+  if (anime.posters?.small?.url) return anime.posters.small.url;
+  if (anime.posters?.original?.url) return anime.posters.original.url;
+  
+  // Структура нашей модели
   if (anime.images?.poster?.medium) return anime.images.poster.medium;
   if (anime.images?.poster?.small) return anime.images.poster.small;
+  if (anime.images?.poster?.large) return anime.images.poster.large;
+  
+  // MyAnimeList структура
   if (anime.images?.jpg?.large_image_url) return anime.images.jpg.large_image_url;
+  if (anime.images?.jpg?.image_url) return anime.images.jpg.image_url;
+  
   return null;
 };
 
@@ -350,9 +381,7 @@ const AnimeCard = ({ anime }) => {
             }}
           />
         ) : (
-          <ImagePlaceholder>
-            🎌
-          </ImagePlaceholder>
+          <ImagePlaceholder />
         )}
 
         {anime.status && (
