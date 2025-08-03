@@ -305,8 +305,9 @@ const SubtitleManager = ({
 
           {/* Размер шрифта */}
           <SettingRow>
-            <label>Размер шрифта:</label>
+            <label htmlFor="font-size">Размер шрифта:</label>
             <SettingSelect
+              id="font-size"
               value={settings.fontSize}
               onChange={(e) => updateSetting('fontSize', e.target.value)}
             >
@@ -320,8 +321,9 @@ const SubtitleManager = ({
 
           {/* Семейство шрифтов */}
           <SettingRow>
-            <label>Шрифт:</label>
+            <label htmlFor="font-family">Шрифт:</label>
             <SettingSelect
+              id="font-family"
               value={settings.fontFamily}
               onChange={(e) => updateSetting('fontFamily', e.target.value)}
             >
@@ -335,8 +337,9 @@ const SubtitleManager = ({
 
           {/* Толщина шрифта */}
           <SettingRow>
-            <label>Толщина:</label>
+            <label htmlFor="font-weight">Толщина:</label>
             <SettingSelect
+              id="font-weight"
               value={settings.fontWeight}
               onChange={(e) => updateSetting('fontWeight', e.target.value)}
             >
@@ -350,8 +353,9 @@ const SubtitleManager = ({
 
           {/* Цвет текста */}
           <SettingRow>
-            <label>Цвет текста:</label>
+            <label htmlFor="text-color">Цвет текста:</label>
             <SettingInput
+              id="text-color"
               type="color"
               value={settings.color}
               onChange={(e) => updateSetting('color', e.target.value)}
@@ -360,8 +364,9 @@ const SubtitleManager = ({
 
           {/* Цвет фона */}
           <SettingRow>
-            <label>Прозрачность фона:</label>
+            <label htmlFor="bg-opacity">Прозрачность фона:</label>
             <SettingInput
+              id="bg-opacity"
               type="range"
               min="0"
               max="1"
@@ -376,8 +381,9 @@ const SubtitleManager = ({
 
           {/* Позиция субтитров */}
           <SettingRow>
-            <label>Отступ снизу:</label>
+            <label htmlFor="subtitle-offset">Отступ снизу:</label>
             <SettingInput
+              id="subtitle-offset"
               type="range"
               min="60"
               max="200"
