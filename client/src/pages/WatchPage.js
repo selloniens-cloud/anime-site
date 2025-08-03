@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { animeService } from '../services/animeService';
-import { anicliService } from '../services/anicliService';
+import anilibriaV2Service from '../services/anilibriaV2Service';
 import { Container, Button, LoadingSpinner } from '../styles/GlobalStyles';
-import { VideoPlayer } from '../components/video';
+import { EnhancedEpisodePlayer } from '../components/video';
 import {
   saveVideoProgress,
   loadVideoProgress,
@@ -99,20 +98,6 @@ const EpisodeNavigation = styled.div`
       transform: none;
     }
   }
-  
-  .episode-selector {
-    background: ${props => props.theme.colors.surface};
-    border: 1px solid ${props => props.theme.colors.border};
-    color: ${props => props.theme.colors.text};
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    
-    &:focus {
-      outline: none;
-      border-color: ${props => props.theme.colors.primary};
-    }
-  }
 `;
 
 const ProgressInfo = styled.div`
@@ -132,7 +117,7 @@ const ProgressInfo = styled.div`
       height: 100%;
       background: ${props => props.theme.colors.primary};
       transition: width 0.3s ease;
-      width: ${props => props.progress}%;
+      width: ${props => props.progress || 0}%;
     }
   }
   
@@ -157,166 +142,129 @@ const ErrorMessage = styled.div`
   color: ${props => props.theme.colors.error};
   padding: 40px;
   font-size: 1.1rem;
+  background: ${props => props.theme.colors.surface};
+  border-radius: 12px;
+  border-left: 4px solid ${props => props.theme.colors.error};
+`;
+
+const BackButton = styled.button`
+  background: transparent;
+  color: ${props => props.theme.colors.text};
+  border: 1px solid ${props => props.theme.colors.border};
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.primary};
+    color: ${props => props.theme.colors.primary};
+  }
 `;
 
 const WatchPage = () => {
-  const { animeId, episodeId } = useParams();
+  const { episodeId } = useParams();
   const navigate = useNavigate();
-  const [anime, setAnime] = useState(null);
   const [episode, setEpisode] = useState(null);
+  const [anime, setAnime] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [progress, setProgress] = useState(0);
   const [playerSettings, setPlayerSettings] = useState(null);
   const [playerPreferences, setPlayerPreferences] = useState(null);
   const [videoProgress, setVideoProgress] = useState(null);
-  const [lastSaveTime, setLastSaveTime] = useState(0);
-  const [videoUrl, setVideoUrl] = useState(null);
 
-  // Загрузка настроек и предпочтений плеера
+  // Загрузка настроек плеера
   useEffect(() => {
     const settings = getVideoSettings();
     const preferences = getPlayerPreferences();
-
+    
     setPlayerSettings(settings);
     setPlayerPreferences(preferences);
   }, []);
 
   // Загрузка прогресса просмотра при смене эпизода
   useEffect(() => {
-    if (animeId && episodeId) {
-      const savedProgress = loadVideoProgress(animeId, episodeId);
+    if (episodeId) {
+      const savedProgress = loadVideoProgress('episode', episodeId);
       setVideoProgress(savedProgress);
-
+      
       if (savedProgress) {
         setProgress((savedProgress.currentTime / (savedProgress.duration || 1440)) * 100);
       }
     }
-  }, [animeId, episodeId]);
+  }, [episodeId]);
 
   useEffect(() => {
-    loadData();
-  }, [animeId, episodeId]);
+    if (episodeId) {
+      loadEpisodeData();
+    }
+  }, [episodeId]);
 
-  const loadData = async () => {
+  const loadEpisodeData = async () => {
     try {
       setLoading(true);
-      const animeResponse = await animeService.getAnimeById(animeId);
-      setAnime(animeResponse.data);
-
-      if (episodeId) {
-        const episodeResponse = await animeService.getEpisodeById(animeId, episodeId);
-        setEpisode(episodeResponse.data);
-
-        // --- Получаем ссылку на видео через Anicli API ---
+      setError(null);
+      
+      console.log(`🎬 Загрузка эпизода ${episodeId}...`);
+      
+      // Получаем данные эпизода
+      const episodeData = await anilibriaV2Service.getEpisodeById(episodeId);
+      const convertedEpisode = anilibriaV2Service.convertEpisodeToFormat(episodeData);
+      
+      setEpisode(convertedEpisode);
+      
+      // Если есть ID аниме, загружаем информацию об аниме
+      if (convertedEpisode.animeId) {
         try {
-          const videoData = await anicliService.getAnimeVideo(animeId, episodeId);
-          if (videoData.url) setVideoUrl(videoData.url);
-        } catch (e) {
-          setVideoUrl(null);
+          const animeData = await anilibriaV2Service.getAnimeById(convertedEpisode.animeId);
+          const convertedAnime = anilibriaV2Service.convertAnimeToFormat(animeData);
+          setAnime(convertedAnime);
+        } catch (animeError) {
+          console.warn('Не удалось загрузить информацию об аниме:', animeError);
         }
       }
+      
+      console.log(`✅ Эпизод загружен:`, convertedEpisode.title);
+      
     } catch (err) {
-      setError('Ошибка загрузки видео');
+      console.error('Ошибка загрузки эпизода:', err);
+      setError(`Не удалось загрузить эпизод: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Обработчики событий плеера
-  const handleTimeUpdate = useCallback((currentTime) => {
-    if (anime && episode && currentTime > 0) {
-      const duration = episode.duration || 1440; // 24 минуты по умолчанию
-      const newProgress = (currentTime / duration) * 100;
+  const handleProgress = useCallback((progressData) => {
+    const { played, playedSeconds, episode: currentEpisode } = progressData;
+    
+    if (currentEpisode && playedSeconds > 0) {
+      const duration = currentEpisode.duration || 1440; // 24 минуты по умолчанию
+      const newProgress = played * 100;
+      
       setProgress(newProgress);
-
+      
       // Сохраняем прогресс каждые 10 секунд
       const now = Date.now();
-      if (now - lastSaveTime > 10000) { // 10 секунд
-        saveVideoProgress(animeId, episodeId, currentTime, duration, newProgress);
-        setLastSaveTime(now);
+      if (!videoProgress || now - (videoProgress.lastSaved || 0) > 10000) {
+        saveVideoProgress('episode', episodeId, playedSeconds, duration, newProgress);
+        setVideoProgress({
+          currentTime: playedSeconds,
+          duration,
+          progress: newProgress,
+          lastSaved: now
+        });
       }
     }
-  }, [animeId, episodeId, anime, episode, lastSaveTime]);
+  }, [episodeId, videoProgress]);
 
-  const handlePlayerError = (error) => {
-    setError(`Ошибка воспроизведения: ${error}`);
+  const handleEpisodeChange = (newEpisodeId) => {
+    if (newEpisodeId !== episodeId) {
+      navigate(`/watch/${newEpisodeId}`);
+    }
   };
-
-  const handleQualityChange = useCallback((quality) => {
-    if (playerSettings) {
-      const updatedSettings = { ...playerSettings, quality };
-      setPlayerSettings(updatedSettings);
-      saveVideoSettings({ quality });
-    }
-  }, [playerSettings]);
-
-  const handlePlayerChange = useCallback((playerType) => {
-    if (playerPreferences) {
-      const updatedPreferences = { ...playerPreferences, preferredPlayer: playerType };
-      setPlayerPreferences(updatedPreferences);
-      savePlayerPreferences({ preferredPlayer: playerType });
-    }
-  }, [playerPreferences]);
-
-  const handleVolumeChange = useCallback((volume) => {
-    if (playerSettings) {
-      const updatedSettings = { ...playerSettings, volume };
-      setPlayerSettings(updatedSettings);
-      saveVideoSettings({ volume });
-    }
-  }, [playerSettings]);
-
-  const handlePlaybackRateChange = useCallback((playbackRate) => {
-    if (playerSettings) {
-      const updatedSettings = { ...playerSettings, playbackRate };
-      setPlayerSettings(updatedSettings);
-      saveVideoSettings({ playbackRate });
-    }
-  }, [playerSettings]);
-
-  const handleProgress = (bufferedPercent) => {
-    // Обработка прогресса буферизации
-  };
-
-  const handlePlay = useCallback(() => {
-    // Логирование начала воспроизведения
-  }, []);
-
-  const handlePause = useCallback(() => {
-    // Сохраняем прогресс при паузе
-    if (anime && episode) {
-      const videoElement = document.querySelector('video');
-      if (videoElement && videoElement.currentTime > 0) {
-        const currentTime = videoElement.currentTime;
-        const duration = episode.duration || videoElement.duration || 1440;
-        const watchedPercent = (currentTime / duration) * 100;
-
-        saveVideoProgress(animeId, episodeId, currentTime, duration, watchedPercent);
-      }
-    }
-  }, [animeId, episodeId, anime, episode]);
-
-  const handleEnded = useCallback(() => {
-    setProgress(100);
-
-    // Отмечаем эпизод как завершенный
-    if (anime && episode) {
-      const duration = episode.duration || 1440;
-      saveVideoProgress(animeId, episodeId, duration, duration, 100);
-
-      // Автоматический переход к следующему эпизоду
-      if (playerSettings?.autoNext && anime.episodes) {
-        const currentEpisodeNum = parseInt(episodeId);
-        if (currentEpisodeNum < anime.episodes) {
-          const nextEpisodeId = currentEpisodeNum + 1;
-          setTimeout(() => {
-            navigate(`/watch/${animeId}/${nextEpisodeId}`);
-          }, 3000); // Задержка 3 секунды
-        }
-      }
-    }
-  }, [animeId, episodeId, anime, episode, playerSettings, navigate]);
 
   if (loading || !playerSettings || !playerPreferences) {
     return (
@@ -334,7 +282,40 @@ const WatchPage = () => {
     return (
       <WatchContainer>
         <Container>
-          <ErrorMessage>{error}</ErrorMessage>
+          <BackButton onClick={() => window.history.back()}>
+            ← Назад
+          </BackButton>
+          <ErrorMessage>
+            {error}
+            <br />
+            <button 
+              onClick={loadEpisodeData}
+              style={{
+                marginTop: '15px',
+                padding: '8px 16px',
+                background: 'transparent',
+                border: '1px solid currentColor',
+                borderRadius: '6px',
+                color: 'inherit',
+                cursor: 'pointer'
+              }}
+            >
+              Попробовать снова
+            </button>
+          </ErrorMessage>
+        </Container>
+      </WatchContainer>
+    );
+  }
+
+  if (!episode) {
+    return (
+      <WatchContainer>
+        <Container>
+          <BackButton onClick={() => window.history.back()}>
+            ← Назад
+          </BackButton>
+          <ErrorMessage>Эпизод не найден</ErrorMessage>
         </Container>
       </WatchContainer>
     );
@@ -343,66 +324,57 @@ const WatchPage = () => {
   return (
     <WatchContainer>
       <Container>
+        <BackButton onClick={() => {
+          if (anime) {
+            navigate(`/anime/${anime.id}`);
+          } else {
+            window.history.back();
+          }
+        }}>
+          ← {anime ? `Назад к "${anime.title}"` : 'Назад'}
+        </BackButton>
+
         <VideoContainer>
-          <VideoPlayer
-            src={videoUrl || episode?.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'}
-            poster={anime?.poster}
-            title={`${anime?.title}${episode ? ` - ${episode.title}` : ''}`}
-            // Восстановление позиции воспроизведения
-            startTime={videoProgress?.currentTime || 0}
-            // Настройки из localStorage
+          <EnhancedEpisodePlayer
+            episodeId={episodeId}
+            animeId={episode.animeId}
             autoPlay={playerSettings.autoPlay}
-            muted={playerSettings.muted}
-            volume={playerSettings.volume}
-            playbackRate={playerSettings.playbackRate}
-            // Предпочтения плеера
-            preferredPlayer={playerPreferences.preferredPlayer}
-            fallbackPlayers={playerPreferences.fallbackPlayers}
-            enablePlayerSelector={playerPreferences.enablePlayerSelector}
-            // Обработчики событий
-            onTimeUpdate={handleTimeUpdate}
+            autoNext={playerSettings.autoNext}
+            onEpisodeChange={handleEpisodeChange}
             onProgress={handleProgress}
-            onPlay={handlePlay}
-            onPause={handlePause}
-            onEnded={handleEnded}
-            onError={handlePlayerError}
-            onPlayerChange={handlePlayerChange}
-            onQualityChange={handleQualityChange}
-            onVolumeChange={handleVolumeChange}
-            onPlaybackRateChange={handlePlaybackRateChange}
-            // Качества и субтитры
-            qualities={[
-              { height: 1080, src: episode?.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
-              { height: 720, src: episode?.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
-              { height: 480, src: episode?.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
-            ]}
-            subtitles={[
-              { lang: 'ru', label: 'Русские субтитры', src: '/subtitles/ru.vtt', default: true },
-              { lang: 'en', label: 'English subtitles', src: '/subtitles/en.vtt' },
-            ]}
           />
         </VideoContainer>
 
         <VideoInfo>
-          <h1>{anime?.title}</h1>
-          {episode && (
-            <div className="episode-info">
-              Эпизод {episode.number || episodeId}: {episode.title}
-            </div>
-          )}
+          <h1>{anime ? anime.title : 'Аниме'}</h1>
+          <div className="episode-info">
+            Эпизод {episode.number || '?'}: {episode.title}
+          </div>
           <div className="video-meta">
-            <div className="meta-item">
-              <span className="icon">📺</span>
-              <span>{anime?.year}</span>
-            </div>
-            <div className="meta-item">
-              <span className="icon">⭐</span>
-              <span>{anime?.rating || 'N/A'}</span>
-            </div>
-            <div className="meta-item">
-              <span className="icon">🎬</span>
-              <span>{anime?.status}</span>
-            </div>
+            {anime?.year && (
+              <div className="meta-item">
+                <span className="icon">📺</span>
+                <span>{anime.year}</span>
+              </div>
+            )}
+            {anime?.rating && (
+              <div className="meta-item">
+                <span className="icon">⭐</span>
+                <span>{anime.rating}</span>
+              </div>
+            )}
+            {anime?.status && (
+              <div className="meta-item">
+                <span className="icon">🎬</span>
+                <span>{anime.status}</span>
+              </div>
+            )}
+            {episode.duration && (
+              <div className="meta-item">
+                <span className="icon">⏱️</span>
+                <span>{Math.round(episode.duration / 60)} мин</span>
+              </div>
+            )}
           </div>
         </VideoInfo>
 
@@ -412,32 +384,23 @@ const WatchPage = () => {
           </div>
           <div className="progress-text">
             <span>Прогресс просмотра: {Math.round(progress)}%</span>
-            <span>{episode?.duration ? `${Math.round((progress / 100) * episode.duration)}/${episode.duration} мин` : ''}</span>
+            <span>
+              {videoProgress ? 
+                `${Math.round(videoProgress.currentTime / 60)} / ${Math.round((videoProgress.duration || 1440) / 60)} мин` : 
+                ''}
+            </span>
           </div>
         </ProgressInfo>
 
         <EpisodeNavigation>
-          <button
-            className="nav-button"
-            onClick={() => window.history.back()}
-          >
-            ← Назад к аниме
-          </button>
-          <select
-            className="episode-selector"
-            value={episodeId}
-            onChange={(e) => {
-              if (e.target.value !== episodeId) {
-                window.location.href = `/watch/${animeId}/${e.target.value}`;
-              }
-            }}
-          >
-            {anime?.episodes && Array.from({ length: anime.episodes }, (_, i) => (
-              <option key={i + 1} value={i + 1}>
-                Эпизод {i + 1}
-              </option>
-            ))}
-          </select>
+          {anime && (
+            <button
+              className="nav-button"
+              onClick={() => navigate(`/anime/${anime.id}`)}
+            >
+              📋 Все эпизоды
+            </button>
+          )}
         </EpisodeNavigation>
       </Container>
     </WatchContainer>

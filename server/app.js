@@ -19,6 +19,8 @@ const externalRoutes = require('./routes/external');
 const watchlistRoutes = require('./routes/watchlist');
 const anilibriaRoutes = require('./routes/anilibria');
 const videoRoutes = require('./routes/video');
+// New AniLiberty API routes
+const apiRoutes = require('./routes/api');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -136,7 +138,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes
+// API routes  
+// AniLiberty API routes (должны быть первыми)
+app.use('/api', apiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/anime', animeRoutes);
 app.use('/api/anime', animeApiRoutes);
@@ -187,18 +191,8 @@ const connectDB = async () => {
 // Create database indexes
 const createIndexes = async () => {
   try {
-    const User = require('./models/User');
-    const Anime = require('./models/Anime');
-    const WatchList = require('./models/WatchList');
-    const Comment = require('./models/Comment');
-
-    // Ensure indexes are created
-    await User.createIndexes();
-    await Anime.createIndexes();
-    await WatchList.createIndexes();
-    await Comment.createIndexes();
-
-    console.log('Database indexes created successfully');
+    console.log('Skipping index creation to avoid conflicts...');
+    console.log('Database indexes will be created automatically by models');
   } catch (error) {
     console.error('Error creating indexes:', error);
   }
@@ -211,7 +205,7 @@ process.on('SIGTERM', async () => {
   server.close(() => {
     console.log('HTTP server closed.');
     
-    mongoose.connection.close(false, () => {
+    mongoose.connection.close(false).then(() => {
       console.log('MongoDB connection closed.');
       process.exit(0);
     });
@@ -224,7 +218,7 @@ process.on('SIGINT', async () => {
   server.close(() => {
     console.log('HTTP server closed.');
     
-    mongoose.connection.close(false, () => {
+    mongoose.connection.close(false).then(() => {
       console.log('MongoDB connection closed.');
       process.exit(0);
     });

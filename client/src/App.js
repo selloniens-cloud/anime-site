@@ -21,6 +21,7 @@ import CatalogPage from './pages/CatalogPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 import VideoPlayerDemo from './pages/VideoPlayerDemo';
+import AnilibriaV2Test from './pages/AnilibriaV2Test';
 
 // Компонент для динамических стилей Toast
 const ToastContainer = () => {
@@ -74,8 +75,11 @@ function App() {
                 <Route path="/popular" element={<CatalogPage filter="popular" />} />
                 <Route path="/latest" element={<CatalogPage filter="latest" />} />
                 <Route path="/anime/:id" element={<AnimePage />} />
-                <Route path="/watch/:animeId/:episodeId?" element={<WatchPage />} />
+                <Route path="/watch/:episodeId" element={<WatchPage />} />
+                {/* Обратная совместимость со старым форматом */}
+                <Route path="/watch/:animeId/:episodeId" element={<WatchPage />} />
                 <Route path="/demo/video-player" element={<VideoPlayerDemo />} />
+                <Route path="/test/anilibria-v2" element={<AnilibriaV2Test />} />
 
                 {/* Защищенные маршруты */}
                 <Route path="/profile" element={

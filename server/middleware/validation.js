@@ -358,6 +358,23 @@ const paramSchemas = {
         'string.pattern.base': 'Неверный формат ID пользователя',
         'any.required': 'ID пользователя обязателен'
       })
+  }),
+
+  animeEpisode: Joi.object({
+    id: Joi.string()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'Неверный формат ID аниме',
+        'any.required': 'ID аниме обязателен'
+      }),
+    episodeId: Joi.string()
+      .pattern(/^\d+$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'Неверный формат номера эпизода',
+        'any.required': 'Номер эпизода обязателен'
+      })
   })
 };
 

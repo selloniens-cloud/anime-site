@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { VideoPlayer } from '../components/video';
+import QualityController from '../components/video/QualityController';
+import VoiceSelector from '../components/video/VoiceSelector';
+import { useTheme } from '../context/ThemeContext';
 
 const DemoContainer = styled.div`
   min-height: 100vh;

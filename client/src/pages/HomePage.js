@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { animeService } from '../services/animeService';
-import anilibriaService from '../services/anilibriaService';
-import { Container, Grid, Button, LoadingSpinner } from '../styles/GlobalStyles';
-import AnimeCard from '../components/anime/AnimeCard';
+import { Container } from '../styles/GlobalStyles';
 import SearchBar from '../components/common/SearchBar';
 import FilterPanel from '../components/common/FilterPanel';
+import PopularSection from '../components/sections/PopularSection';
+import NewEpisodesSection from '../components/sections/NewEpisodesSection';
+import NewAnimeSection from '../components/sections/NewAnimeSection';
+import AnimeCard from '../components/anime/AnimeCard';
+import anilibriaV2Service from '../services/anilibriaV2Service';
 
 const HomeContainer = styled.div`
   min-height: 100vh;
@@ -58,6 +61,17 @@ const FilterSection = styled.div`
   }
 `;
 
+const SearchGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 30px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+  }
+`;
+
 const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
@@ -70,15 +84,16 @@ const ErrorMessage = styled.div`
   color: ${props => props.theme.colors.error};
   padding: 40px;
   font-size: 1.1rem;
+  background: ${props => props.theme.colors.surface};
+  border-radius: 12px;
+  border-left: 4px solid ${props => props.theme.colors.error};
 `;
 
 const HomePage = () => {
-  const [popularAnime, setPopularAnime] = useState([]);
-  const [latestAnime, setLatestAnime] = useState([]);
+  const navigate = useNavigate();
   const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [searchError, setSearchError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
     genre: '',
@@ -86,54 +101,6 @@ const HomePage = () => {
     status: '',
     rating: '',
   });
-
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  const loadInitialData = async () => {
-    try {
-      setLoading(true);
-
-      // Сначала пытаемся загрузить данные из AniLibria
-      const [popularResult, updatesResult] = await Promise.all([
-        anilibriaService.getPopular(12).catch(() => null),
-        anilibriaService.getUpdates(12).catch(() => null),
-      ]);
-
-      let popular = [];
-      let latest = [];
-
-      // Если данные из AniLibria получены успешно
-      if (popularResult?.success && popularResult.data?.data) {
-        popular = popularResult.data.data.map(title => anilibriaService.formatAnimeData(title));
-      }
-
-      if (updatesResult?.success && updatesResult.data?.data) {
-        latest = updatesResult.data.data.map(title => anilibriaService.formatAnimeData(title));
-      }
-
-      // Fallback на локальные данные если AniLibria недоступен или пусто
-      if (popular.length === 0 || latest.length === 0) {
-        console.log('Fallback to local data');
-        const [localPopular, localLatest] = await Promise.all([
-          animeService.getPopularAnime(12).catch(() => ({ data: [] })),
-          animeService.getLatestAnime(12).catch(() => ({ data: [] })),
-        ]);
-
-        if (popular.length === 0) popular = localPopular.data || [];
-        if (latest.length === 0) latest = localLatest.data || [];
-      }
-
-      setPopularAnime(popular);
-      setLatestAnime(latest);
-    } catch (err) {
-      setError('Ошибка загрузки данных. Попробуйте обновить страницу.');
-      console.error('Error loading initial data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSearch = async (query) => {
     if (!query.trim()) {
@@ -144,35 +111,35 @@ const HomePage = () => {
 
     try {
       setSearchLoading(true);
+      setSearchError(null);
       setSearchQuery(query);
 
-      // Сначала пытаемся искать в AniLibria
-      let results = [];
-      try {
-        const anilibriaResults = await anilibriaService.searchWithFallback(query, { limit: 20 });
-        if (anilibriaResults?.success && anilibriaResults.data) {
-          results = Array.isArray(anilibriaResults.data)
-            ? anilibriaResults.data.map(title => anilibriaService.formatAnimeData(title))
-            : [];
-        }
-      } catch (anilibriaError) {
-        console.log('AniLibria search failed, trying local search:', anilibriaError);
-      }
+      console.log(`🔍 Поиск аниме: "${query}"`);
+      
+      const response = await anilibriaV2Service.searchAnime(query, {
+        perPage: 20,
+        page: 1,
+        ...filters
+      });
 
-      // Fallback на локальный поиск
-      if (results.length === 0) {
-        try {
-          const localResults = await animeService.searchAnime(query, filters);
-          results = localResults.data || [];
-        } catch (localError) {
-          setError('Ошибка поиска. Проверьте соединение с сервером.');
-          results = [];
-        }
+      let results = [];
+      
+      if (response?.data && Array.isArray(response.data)) {
+        results = response.data.map(anime => 
+          anilibriaV2Service.convertAnimeToFormat(anime)
+        );
+      } else if (response && Array.isArray(response)) {
+        results = response.map(anime => 
+          anilibriaV2Service.convertAnimeToFormat(anime)
+        );
       }
 
       setSearchResults(results);
+      console.log(`✅ Найдено ${results.length} результатов поиска`);
+
     } catch (err) {
-      console.error('Search error:', err);
+      console.error('Ошибка поиска:', err);
+      setSearchError('Ошибка поиска. Попробуйте изменить запрос.');
       setSearchResults([]);
     } finally {
       setSearchLoading(false);
@@ -183,69 +150,14 @@ const HomePage = () => {
     setFilters(newFilters);
 
     if (searchQuery) {
-      try {
-        setSearchLoading(true);
-
-        // Применяем фильтры к поиску в AniLibria
-        let results = [];
-        try {
-          const searchParams = {
-            limit: 20,
-            ...newFilters,
-          };
-
-          const anilibriaResults = await anilibriaService.searchWithFallback(searchQuery, searchParams);
-          if (anilibriaResults?.success && anilibriaResults.data) {
-            results = Array.isArray(anilibriaResults.data)
-              ? anilibriaResults.data.map(title => anilibriaService.formatAnimeData(title))
-              : [];
-          }
-        } catch (anilibriaError) {
-          console.log('AniLibria filtered search failed, trying local search:', anilibriaError);
-        }
-
-        // Fallback на локальный поиск с фильтрами
-        if (results.length === 0) {
-          const localResults = await animeService.searchAnime(searchQuery, newFilters);
-          results = localResults.data || [];
-        }
-
-        setSearchResults(results);
-      } catch (err) {
-        console.error('Filter error:', err);
-      } finally {
-        setSearchLoading(false);
-      }
+      await handleSearch(searchQuery);
     }
   };
 
-  if (loading) {
-    return (
-      <HomeContainer>
-        <Container>
-          <LoadingContainer>
-            <LoadingSpinner size="48px" />
-          </LoadingContainer>
-        </Container>
-      </HomeContainer>
-    );
-  }
-
-  if (error) {
-    return (
-      <HomeContainer>
-        <Container>
-          <ErrorMessage>
-            {error}
-            <br />
-            <Button onClick={loadInitialData} style={{ marginTop: '20px' }}>
-              Попробовать снова
-            </Button>
-          </ErrorMessage>
-        </Container>
-      </HomeContainer>
-    );
-  }
+  const handleAnimeClick = (anime) => {
+    console.log('Клик по аниме:', anime);
+    navigate(`/anime/${anime.id}`);
+  };
 
   return (
     <HomeContainer>
@@ -264,21 +176,53 @@ const HomePage = () => {
         {searchQuery && (
           <Section>
             <SectionTitle>
-              Результаты поиска &quot;{searchQuery}&quot;
-              {searchLoading && <LoadingSpinner size="24px" style={{ marginLeft: '10px' }} />}
+              Результаты поиска "{searchQuery}"
             </SectionTitle>
 
             <FilterSection>
               <FilterPanel filters={filters} onFilterChange={handleFilterChange} />
             </FilterSection>
 
-            {searchResults.length > 0 ? (
-              <Grid>
+            {searchLoading && (
+              <LoadingContainer>
+                <div>Поиск...</div>
+              </LoadingContainer>
+            )}
+
+            {searchError && (
+              <ErrorMessage>
+                {searchError}
+                <br />
+                <button 
+                  onClick={() => handleSearch(searchQuery)}
+                  style={{
+                    marginTop: '15px',
+                    padding: '8px 16px',
+                    background: 'transparent',
+                    border: '1px solid currentColor',
+                    borderRadius: '6px',
+                    color: 'inherit',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Повторить поиск
+                </button>
+              </ErrorMessage>
+            )}
+
+            {searchResults.length > 0 && !searchLoading && (
+              <SearchGrid>
                 {searchResults.map((anime, index) => (
-                  <AnimeCard key={anime.id || anime._id || index} anime={anime} />
+                  <AnimeCard 
+                    key={anime.id || index} 
+                    anime={anime} 
+                    onClick={() => handleAnimeClick(anime)}
+                  />
                 ))}
-              </Grid>
-            ) : !searchLoading && (
+              </SearchGrid>
+            )}
+
+            {searchResults.length === 0 && !searchLoading && !searchError && (
               <ErrorMessage>
                 По вашему запросу ничего не найдено. Попробуйте изменить параметры поиска.
               </ErrorMessage>
@@ -288,31 +232,19 @@ const HomePage = () => {
 
         {!searchQuery && (
           <>
-            <Section>
-              <SectionTitle>🔥 Популярные аниме</SectionTitle>
-              {popularAnime.length > 0 ? (
-                <Grid>
-                  {popularAnime.map((anime, index) => (
-                    <AnimeCard key={anime.id || anime._id || index} anime={anime} />
-                  ))}
-                </Grid>
-              ) : (
-                <ErrorMessage>Нет данных для отображения</ErrorMessage>
-              )}
-            </Section>
-
-            <Section>
-              <SectionTitle>🆕 Новые аниме</SectionTitle>
-              {latestAnime.length > 0 ? (
-                <Grid>
-                  {latestAnime.map((anime, index) => (
-                    <AnimeCard key={anime.id || anime._id || index} anime={anime} />
-                  ))}
-                </Grid>
-              ) : (
-                <ErrorMessage>Нет данных для отображения</ErrorMessage>
-              )}
-            </Section>
+            <PopularSection 
+              limit={12}
+              onAnimeClick={handleAnimeClick}
+            />
+            
+            <NewEpisodesSection 
+              limit={10}
+            />
+            
+            <NewAnimeSection 
+              limit={12}
+              onAnimeClick={handleAnimeClick}
+            />
           </>
         )}
       </Container>

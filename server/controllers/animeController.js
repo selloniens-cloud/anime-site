@@ -295,6 +295,73 @@ class AnimeController {
     }
   }
 
+  // Получение эпизода по ID
+  async getEpisodeById(req, res) {
+    try {
+      const { id, episodeId } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          error: {
+            message: 'Неверный ID аниме'
+          }
+        });
+      }
+
+      const anime = await Anime.findById(id)
+        .select('title videos episodes')
+        .where({ isActive: true, approved: true });
+
+      if (!anime) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          error: {
+            message: 'Аниме не найдено'
+          }
+        });
+      }
+
+      // Находим эпизод
+      const episode = anime.videos.find(video => video.episode === parseInt(episodeId));
+
+      if (!episode) {
+        return res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          error: {
+            message: 'Эпизод не найден'
+          }
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          animeTitle: anime.title,
+          totalEpisodes: anime.episodes,
+          episode: {
+            number: episode.episode,
+            title: episode.title,
+            duration: episode.duration,
+            thumbnail: episode.thumbnail,
+            videoUrl: episode.sources?.[0]?.url,
+            sources: episode.sources,
+            subtitles: episode.subtitles
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Get episode by ID error:', error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        error: {
+          message: ERROR_MESSAGES.SERVER_ERROR
+        }
+      });
+    }
+  }
+
   // Получение эпизодов аниме
   async getAnimeEpisodes(req, res) {
     try {

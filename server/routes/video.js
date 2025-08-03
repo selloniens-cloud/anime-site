@@ -17,6 +17,18 @@ router.get('/qualities',
   videoController.getAvailableQualities
 );
 
+// Получение доступных озвучек
+router.get('/voices',
+  optionalAuth,
+  videoController.getAvailableVoices
+);
+
+// Получение субтитров
+router.get('/subtitles',
+  optionalAuth,
+  videoController.getSubtitles
+);
+
 // Проверка доступности видео
 router.get('/video/check',
   optionalAuth,

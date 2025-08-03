@@ -1,12 +1,23 @@
 // Основной универсальный компонент
 export { default as VideoPlayer, PLAYER_TYPES, useVideoPlayer } from './VideoPlayer';
 
+// Новые компоненты для AniLiberty
+export { default as AniLibertyPlayer } from './AniLibertyPlayer';
+export { default as EnhancedAniLibertyPlayer } from './EnhancedAniLibertyPlayer';
+export { default as EnhancedEpisodePlayer } from './EnhancedEpisodePlayer';
+export { default as SubtitleManager } from './SubtitleManager';
+export { default as VoiceSelector } from './VoiceSelector';
+export { default as QualityController } from './QualityController';
+
 // Отдельные плееры для прямого использования
 export { default as HTML5Player } from './HTML5Player';
 export { default as VideoJSPlayer } from './VideoJSPlayer';
 export { default as PlyrPlayer } from './PlyrPlayer';
 export { default as HLSPlayer } from './HLSPlayer';
 export { default as DashPlayer } from './DashPlayer';
+
+// Старый плеер эпизодов (для обратной совместимости)
+export { default as EpisodeVideoPlayer } from './EpisodeVideoPlayer';
 
 // Утилиты для работы с видео
 export const VideoUtils = {
@@ -148,6 +159,98 @@ export const VideoUtils = {
       video.load();
     });
   },
+
+  // Определение типа озвучки
+  getVoiceType: (voice) => {
+    if (!voice) return 'unknown';
+    
+    if (voice.language === 'ja' || voice.original) return 'original';
+    if (voice.type === 'dub') return 'dub';
+    if (voice.type === 'sub') return 'sub';
+    
+    return 'dub';
+  },
+
+  // Получение иконки для типа озвучки
+  getVoiceIcon: (voice) => {
+    const type = VideoUtils.getVoiceType(voice);
+    
+    switch (type) {
+      case 'original':
+        return '🎌';
+      case 'dub':
+        return voice.language === 'ru' ? '🇷🇺' : '🎭';
+      case 'sub':
+        return '📝';
+      default:
+        return '🎵';
+    }
+  },
+
+  // Парсинг WebVTT субтитров
+  parseWebVTT: (vttText) => {
+    const lines = vttText.split('\n');
+    const cues = [];
+    let currentCue = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // Пропускаем заголовок WEBVTT
+      if (line.startsWith('WEBVTT') || line === '') {
+        continue;
+      }
+
+      // Проверяем временные метки
+      const timeMatch = line.match(/^(\d{2}:)?(\d{2}):(\d{2})\.(\d{3})\s+-->\s+(\d{2}:)?(\d{2}):(\d{2})\.(\d{3})$/);
+      
+      if (timeMatch) {
+        // Создаем новую реплику
+        currentCue = {
+          start: VideoUtils.parseVTTTime(timeMatch[0].split(' --> ')[0]),
+          end: VideoUtils.parseVTTTime(timeMatch[0].split(' --> ')[1]),
+          text: ''
+        };
+        continue;
+      }
+
+      // Если есть текущая реплика и строка не пустая
+      if (currentCue && line) {
+        if (currentCue.text) {
+          currentCue.text += '\n' + line;
+        } else {
+          currentCue.text = line;
+        }
+      }
+
+      // Если следующая строка пустая или мы достигли конца, сохраняем реплику
+      if (currentCue && (i === lines.length - 1 || lines[i + 1].trim() === '')) {
+        cues.push(currentCue);
+        currentCue = null;
+      }
+    }
+
+    return cues;
+  },
+
+  // Парсинг времени WebVTT
+  parseVTTTime: (timeString) => {
+    const parts = timeString.split(':');
+    let seconds = 0;
+
+    if (parts.length === 3) {
+      // HH:MM:SS.mmm
+      seconds += parseInt(parts[0]) * 3600;
+      seconds += parseInt(parts[1]) * 60;
+      seconds += parseFloat(parts[2]);
+    } else if (parts.length === 2) {
+      // MM:SS.mmm
+      seconds += parseInt(parts[0]) * 60;
+      seconds += parseFloat(parts[1]);
+    }
+
+    return seconds;
+  }
 };
 
 // Константы для настроек плееров
@@ -193,8 +296,24 @@ export const PlayerDefaults = {
     VOLUME_DOWN: 'down',
     MUTE: 'm',
     FULLSCREEN: 'f',
+    SUBTITLES: 'c',
+    SUBTITLE_SETTINGS: 'ctrl+s',
+    NEXT_EPISODE: 'ctrl+n',
+    PREV_EPISODE: 'ctrl+p',
     SEEK_TO_PERCENT: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
   },
+
+  // Настройки субтитров по умолчанию
+  SUBTITLE_SETTINGS: {
+    fontSize: '18px',
+    mobileFontSize: '16px',
+    fontFamily: 'Arial, sans-serif',
+    fontWeight: '500',
+    color: '#ffffff',
+    background: 'rgba(0, 0, 0, 0.8)',
+    position: 'bottom',
+    offset: 80
+  }
 };
 
 // Типы событий плеера
@@ -221,6 +340,14 @@ export const PlayerEvents = {
   QUALITY_CHANGE: 'qualitychange',
   BITRATE_CHANGE: 'bitratechange',
 
+  // События озвучки
+  VOICE_CHANGE: 'voicechange',
+  VOICES_LOADED: 'voicesloaded',
+
+  // События субтитров
+  SUBTITLE_CHANGE: 'subtitlechange',
+  SUBTITLES_LOADED: 'subtitlesloaded',
+
   // События плеера
   PLAYER_CHANGE: 'playerchange',
   FULLSCREEN_CHANGE: 'fullscreenchange',
@@ -239,4 +366,7 @@ export const PlayerErrors = {
   MANIFEST_LOAD_ERROR: 101,
   SEGMENT_LOAD_ERROR: 102,
   DRM_ERROR: 103,
+  SUBTITLE_LOAD_ERROR: 104,
+  VOICE_LOAD_ERROR: 105,
+  API_ERROR: 106,
 };

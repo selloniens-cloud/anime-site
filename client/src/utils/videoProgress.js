@@ -15,8 +15,9 @@ const STORAGE_KEYS = {
  * @param {number} currentTime - Текущее время просмотра в секундах
  * @param {number} duration - Общая длительность видео в секундах
  * @param {number} watchedPercent - Процент просмотра
+ * @param {Object} metadata - Дополнительные данные (качество, озвучка, субтитры)
  */
-export const saveVideoProgress = (animeId, episodeId, currentTime, duration, watchedPercent) => {
+export const saveVideoProgress = (animeId, episodeId, currentTime, duration, watchedPercent, metadata = {}) => {
   try {
     const progressData = getVideoProgress();
     const key = `${animeId}_${episodeId}`;
@@ -29,6 +30,10 @@ export const saveVideoProgress = (animeId, episodeId, currentTime, duration, wat
       watchedPercent: Math.round(watchedPercent),
       lastWatched: new Date().toISOString(),
       completed: watchedPercent >= 90, // Считаем завершенным при 90%+
+      quality: metadata.quality || 'auto',
+      voice: metadata.voice || 0,
+      subtitles: metadata.subtitles || false,
+      version: 2 // Версия формата данных
     };
 
     localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(progressData));
@@ -139,55 +144,198 @@ export const removeVideoProgress = (animeId, episodeId = null) => {
 };
 
 /**
- * Сохранение настроек видеоплеера
- * @param {Object} settings - Настройки плеера
+ * Получение настроек видеоплеера
+ * @returns {Object} Настройки плеера
  */
-export const saveVideoSettings = (settings) => {
+export const getVideoSettings = () => {
+  try {
+    const settings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+    const defaultSettings = {
+      volume: 1.0,
+      muted: false,
+      quality: 'auto',
+      autoplay: false,
+      autoNext: false,
+      subtitles: 'off', // 'off', 'ru', 'en', 'ja'
+      subtitleSettings: {
+        fontSize: '18px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#ffffff',
+        background: 'rgba(0, 0, 0, 0.8)',
+        position: 'bottom',
+        offset: 80
+      },
+      voice: 0, // Индекс выбранной озвучки
+      playerType: 'aniliberty', // 'aniliberty', 'videojs', 'plyr', 'html5'
+      theme: 'dark', // 'dark', 'light', 'auto'
+      hotkeysEnabled: true,
+      version: 2 // Версия настроек
+    };
+
+    if (!settings) {
+      return defaultSettings;
+    }
+
+    const parsed = JSON.parse(settings);
+    
+    // Миграция старых настроек
+    if (!parsed.version || parsed.version < 2) {
+      const migrated = { ...defaultSettings, ...parsed, version: 2 };
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(migrated));
+      return migrated;
+    }
+
+    return { ...defaultSettings, ...parsed };
+  } catch (error) {
+    console.warn('Ошибка чтения настроек видеоплеера:', error);
+    return {
+      volume: 1.0,
+      muted: false,
+      quality: 'auto',
+      autoplay: false,
+      autoNext: false,
+      subtitles: 'off',
+      subtitleSettings: {
+        fontSize: '18px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#ffffff',
+        background: 'rgba(0, 0, 0, 0.8)',
+        position: 'bottom',
+        offset: 80
+      },
+      voice: 0,
+      playerType: 'aniliberty',
+      theme: 'dark',
+      hotkeysEnabled: true,
+      version: 2
+    };
+  }
+};
+
+/**
+ * Сохранение настроек видеоплеера
+ * @param {Object} newSettings - Новые настройки
+ * @returns {boolean} Успешность сохранения
+ */
+export const saveVideoSettings = (newSettings) => {
   try {
     const currentSettings = getVideoSettings();
-    const updatedSettings = { ...currentSettings, ...settings };
+    const updatedSettings = {
+      ...currentSettings,
+      ...newSettings,
+      lastUpdated: new Date().toISOString(),
+      version: 2
+    };
 
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updatedSettings));
+    
+    // Уведомляем другие вкладки об изменении настроек
+    if (typeof window !== 'undefined' && window.dispatchEvent) {
+      window.dispatchEvent(new CustomEvent('videoSettingsChanged', {
+        detail: updatedSettings
+      }));
+    }
+
     return true;
   } catch (error) {
-    // console.error('Ошибка сохранения настроек:', error);
+    console.error('Ошибка сохранения настроек:', error);
     return false;
   }
 };
 
 /**
- * Загрузка настроек видеоплеера
- * @returns {Object} Настройки плеера
+ * Сброс настроек видеоплеера к дефолтным
+ * @returns {boolean} Успешность сброса
  */
-export const getVideoSettings = () => {
+export const resetVideoSettings = () => {
   try {
-    const data = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    const defaultSettings = {
-      volume: 1,
-      muted: false,
-      playbackRate: 1,
-      quality: 'auto',
-      subtitles: 'off',
-      autoPlay: false,
-      autoNext: true,
-      skipIntro: false,
-      skipOutro: false,
-    };
-
-    return data ? { ...defaultSettings, ...JSON.parse(data) } : defaultSettings;
+    localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+    return true;
   } catch (error) {
-    // console.error('Ошибка загрузки настроек:', error);
-    return {
-      volume: 1,
-      muted: false,
-      playbackRate: 1,
-      quality: 'auto',
-      subtitles: 'off',
-      autoPlay: false,
-      autoNext: true,
-      skipIntro: false,
-      skipOutro: false,
-    };
+    console.error('Ошибка сброса настроек:', error);
+    return false;
+  }
+};
+
+/**
+ * Получение настроек субтитров
+ * @returns {Object} Настройки субтитров
+ */
+export const getSubtitleSettings = () => {
+  const settings = getVideoSettings();
+  return settings.subtitleSettings || {};
+};
+
+/**
+ * Сохранение настроек субтитров
+ * @param {Object} subtitleSettings - Новые настройки субтитров
+ * @returns {boolean} Успешность сохранения
+ */
+export const saveSubtitleSettings = (subtitleSettings) => {
+  const currentSettings = getVideoSettings();
+  return saveVideoSettings({
+    subtitleSettings: {
+      ...currentSettings.subtitleSettings,
+      ...subtitleSettings
+    }
+  });
+};
+
+/**
+ * Получение последней выбранной озвучки для аниме
+ * @param {string} animeId - ID аниме
+ * @returns {number} Индекс озвучки
+ */
+export const getLastVoiceForAnime = (animeId) => {
+  try {
+    const voiceData = localStorage.getItem(`voice_${animeId}`);
+    return voiceData ? parseInt(JSON.parse(voiceData)) : 0;
+  } catch (error) {
+    return 0;
+  }
+};
+
+/**
+ * Сохранение выбранной озвучки для аниме
+ * @param {string} animeId - ID аниме
+ * @param {number} voiceIndex - Индекс озвучки
+ * @returns {boolean} Успешность сохранения
+ */
+export const saveLastVoiceForAnime = (animeId, voiceIndex) => {
+  try {
+    localStorage.setItem(`voice_${animeId}`, JSON.stringify(voiceIndex));
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * Получение последнего выбранного качества для аниме
+ * @param {string} animeId - ID аниме
+ * @returns {string} Качество видео
+ */
+export const getLastQualityForAnime = (animeId) => {
+  try {
+    const qualityData = localStorage.getItem(`quality_${animeId}`);
+    return qualityData ? JSON.parse(qualityData) : 'auto';
+  } catch (error) {
+    return 'auto';
+  }
+};
+
+/**
+ * Сохранение выбранного качества для аниме
+ * @param {string} animeId - ID аниме  
+ * @param {string} quality - Качество видео
+ * @returns {boolean} Успешность сохранения
+ */
+export const saveLastQualityForAnime = (animeId, quality) => {
+  try {
+    localStorage.setItem(`quality_${animeId}`, JSON.stringify(quality));
+    return true;
+  } catch (error) {
+    return false;
   }
 };
 
