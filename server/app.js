@@ -152,6 +152,8 @@ app.use('/api/external', externalRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/anilibria', anilibriaRoutes);
 app.use('/api/video', videoRoutes);
+app.use('/api/favorites', favoritesRoutes);
+app.use('/api/watch-history', watchHistoryRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
