@@ -2,6 +2,7 @@
  * Утилиты для автоматического переключения темы по времени
  */
 
+import React from 'react';
 import { getVideoSettingsDB, saveVideoSettingsDB } from './indexedDBProgress';
 
 const DEFAULT_SCHEDULE = {
