@@ -287,8 +287,9 @@ const SubtitleManager = ({
           {subtitleTracks.length > 0 && (
             <SubtitleTrackSelector>
               <SettingRow>
-                <label>Дорожка:</label>
+                <label htmlFor="track-selector">Дорожка:</label>
                 <SettingSelect
+                  id="track-selector"
                   value={activeTrack}
                   onChange={(e) => setActiveTrack(parseInt(e.target.value))}
                 >
