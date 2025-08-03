@@ -65,11 +65,11 @@ const EmptyState = styled.div`
   }
 `;
 
-const PopularSection = ({ 
-  limit = 10, 
-  showTitle = true, 
-  title = "🔥 Популярные аниме",
-  onAnimeClick
+const PopularSection = ({
+  limit = 10,
+  showTitle = true,
+  title = '🔥 Популярные аниме',
+  onAnimeClick,
 }) => {
   const [popularAnime, setPopularAnime] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,21 +85,21 @@ const PopularSection = ({
       setError(null);
 
       console.log('🚀 Загрузка популярных аниме...');
-      
+
       const response = await anilibriaV2Service.getPopularAnime({
         perPage: limit,
-        page: 1
+        page: 1,
       });
 
       let animeList = [];
-      
+
       if (response?.data && Array.isArray(response.data)) {
-        animeList = response.data.map(anime => 
-          anilibriaV2Service.convertAnimeToFormat(anime)
+        animeList = response.data.map(anime =>
+          anilibriaV2Service.convertAnimeToFormat(anime),
         );
       } else if (response && Array.isArray(response)) {
-        animeList = response.map(anime => 
-          anilibriaV2Service.convertAnimeToFormat(anime)
+        animeList = response.map(anime =>
+          anilibriaV2Service.convertAnimeToFormat(anime),
         );
       }
 
@@ -136,7 +136,7 @@ const PopularSection = ({
         <ErrorMessage>
           {error}
           <br />
-          <button 
+          <button
             onClick={handleRetry}
             style={{
               marginTop: '15px',
@@ -145,7 +145,7 @@ const PopularSection = ({
               border: '1px solid currentColor',
               borderRadius: '6px',
               color: 'inherit',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             Попробовать снова
@@ -183,8 +183,8 @@ const PopularSection = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
           >
-            <AnimeCard 
-              anime={anime} 
+            <AnimeCard
+              anime={anime}
               onClick={() => onAnimeClick?.(anime)}
             />
           </motion.div>

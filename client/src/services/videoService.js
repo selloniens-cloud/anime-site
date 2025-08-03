@@ -7,8 +7,8 @@ export const videoService = {
       const response = await api.get('/api/anime/video', {
         params: {
           anime_id: animeId,
-          episode: episode
-        }
+          episode,
+        },
       });
       return response.data;
     } catch (error) {
@@ -23,23 +23,23 @@ export const videoService = {
         params: {
           anime_id: animeId,
           episode,
-          quality
+          quality,
         },
-        responseType: 'blob'
+        responseType: 'blob',
       });
       return URL.createObjectURL(response.data);
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Ошибка получения видео');
     }
   },
-  
+
   async getAvailableQualities(animeId, episode) {
     try {
       const response = await api.get('/api/anime/qualities', {
-        params: { 
-          anime_id: animeId, 
-          episode 
-        }
+        params: {
+          anime_id: animeId,
+          episode,
+        },
       });
       return response.data;
     } catch (error) {
@@ -51,14 +51,14 @@ export const videoService = {
   async checkVideoAvailability(animeId, episode) {
     try {
       const response = await api.get('/api/anime/video/check', {
-        params: { 
-          anime_id: animeId, 
-          episode 
-        }
+        params: {
+          anime_id: animeId,
+          episode,
+        },
       });
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Ошибка проверки доступности видео');
     }
-  }
+  },
 };

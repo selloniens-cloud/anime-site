@@ -12,7 +12,7 @@ import {
   getVideoSettingsDB,
   saveVideoSettingsDB,
   migrateFromLocalStorage,
-  isIndexedDBSupported
+  isIndexedDBSupported,
 } from '../../utils/indexedDBProgress';
 
 const PlayerContainer = styled.div`
@@ -456,7 +456,7 @@ const EnhancedAniLibertyPlayer = ({
   onEpisodeChange,
   onQualityChange,
   className,
-  style
+  style,
 }) => {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -475,7 +475,7 @@ const EnhancedAniLibertyPlayer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [playbackRate, setPlaybackRate] = useState(1);
-  
+
   // Состояния UI
   const [controlsVisible, setControlsVisible] = useState(true);
   const [showCursor, setShowCursor] = useState(true);
@@ -549,7 +549,7 @@ const EnhancedAniLibertyPlayer = ({
           quality: currentQuality,
           voice: currentVoice,
           subtitles: subtitlesEnabled,
-          playerType: 'aniliberty'
+          playerType: 'aniliberty',
         };
 
         await saveVideoProgressDB(animeId, episodeId, currentTime, duration, progress, metadata);
@@ -569,7 +569,7 @@ const EnhancedAniLibertyPlayer = ({
     if (hideControlsTimeoutRef.current) {
       clearTimeout(hideControlsTimeoutRef.current);
     }
-    
+
     hideControlsTimeoutRef.current = setTimeout(() => {
       if (isPlaying) {
         setControlsVisible(false);
@@ -591,7 +591,7 @@ const EnhancedAniLibertyPlayer = ({
       setError(null);
 
       const response = await fetch(
-        `/api/video/video?anime_id=${animeId}&episode=${episodeId}&quality=${currentQuality}&voice=${currentVoice}`
+        `/api/video/video?anime_id=${animeId}&episode=${episodeId}&quality=${currentQuality}&voice=${currentVoice}`,
       );
 
       if (!response.ok) {
@@ -599,18 +599,18 @@ const EnhancedAniLibertyPlayer = ({
       }
 
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Ошибка получения видео');
       }
 
       setVideoData(data);
-      
+
       // Получаем доступные качества
       const qualitiesResponse = await fetch(
-        `/api/video/qualities?anime_id=${animeId}&episode=${episodeId}`
+        `/api/video/qualities?anime_id=${animeId}&episode=${episodeId}`,
       );
-      
+
       if (qualitiesResponse.ok) {
         const qualitiesData = await qualitiesResponse.json();
         if (qualitiesData.success && qualitiesData.qualities) {
@@ -620,7 +620,7 @@ const EnhancedAniLibertyPlayer = ({
               label: quality,
               height: parseInt(quality.replace('p', '')),
               bitrate: getBitrateForQuality(quality),
-              url
+              url,
             }));
           setAvailableQualities(qualities);
         }
@@ -656,7 +656,7 @@ const EnhancedAniLibertyPlayer = ({
       '720p': 2500000,
       '480p': 1000000,
       '360p': 500000,
-      '240p': 250000
+      '240p': 250000,
     };
     return qualityMap[quality] || 1000000;
   };
@@ -684,7 +684,7 @@ const EnhancedAniLibertyPlayer = ({
           maxMaxBufferLength: 600,
           startLevel: -1, // auto quality
           capLevelToPlayerSize: true,
-          debug: false
+          debug: false,
         });
 
         hls.loadSource(videoUrl);
@@ -693,10 +693,10 @@ const EnhancedAniLibertyPlayer = ({
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           console.log('HLS manifest parsed');
           setIsLoading(false);
-          
+
           // Восстанавливаем позицию просмотра
           restoreVideoPosition();
-          
+
           if (autoPlay) {
             playVideo();
           }
@@ -858,7 +858,7 @@ const EnhancedAniLibertyPlayer = ({
     }, [playbackRate]),
     enabled: settings?.hotkeysEnabled !== false,
     seekStep: settings?.seekStep || 10,
-    volumeStep: settings?.volumeStep || 0.1
+    volumeStep: settings?.volumeStep || 0.1,
   });
 
   // Обработчики видео событий
@@ -888,13 +888,13 @@ const EnhancedAniLibertyPlayer = ({
     const handleVolumeChange = async () => {
       setVolume(video.volume);
       setIsMuted(video.muted);
-      
+
       // Сохраняем настройки
       if (settings) {
-        await saveVideoSettingsDB({ 
-          ...settings, 
-          volume: video.volume, 
-          muted: video.muted 
+        await saveVideoSettingsDB({
+          ...settings,
+          volume: video.volume,
+          muted: video.muted,
         });
       }
     };
@@ -986,11 +986,11 @@ const EnhancedAniLibertyPlayer = ({
   // Форматирование времени
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return '00:00';
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -1066,7 +1066,7 @@ const EnhancedAniLibertyPlayer = ({
           {videoData?.episode?.title || `Эпизод ${episodeId}`}
           {playbackRate !== 1 && <div style={{ fontSize: '12px', opacity: 0.8 }}>Скорость: {playbackRate}x</div>}
         </EpisodeInfo>
-        
+
         <PlayerStatus>
           <QualityBadge>
             {currentQuality === 'auto' ? 'AUTO' : currentQuality.toUpperCase()}
@@ -1085,7 +1085,7 @@ const EnhancedAniLibertyPlayer = ({
       </TopControls>
 
       {/* Подсказки горячих клавиш */}
-      <HotkeyTooltip 
+      <HotkeyTooltip
         visible={showHotkeys}
         onMouseEnter={() => setShowHotkeys(true)}
         onMouseLeave={() => setShowHotkeys(false)}
@@ -1216,7 +1216,7 @@ const EnhancedAniLibertyPlayer = ({
             </ControlButton>
 
             {/* Fullscreen */}
-            <ControlButton 
+            <ControlButton
               onClick={() => {
                 if (!document.fullscreenElement) {
                   containerRef.current?.requestFullscreen?.();

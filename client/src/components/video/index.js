@@ -163,27 +163,27 @@ export const VideoUtils = {
   // Определение типа озвучки
   getVoiceType: (voice) => {
     if (!voice) return 'unknown';
-    
+
     if (voice.language === 'ja' || voice.original) return 'original';
     if (voice.type === 'dub') return 'dub';
     if (voice.type === 'sub') return 'sub';
-    
+
     return 'dub';
   },
 
   // Получение иконки для типа озвучки
   getVoiceIcon: (voice) => {
     const type = VideoUtils.getVoiceType(voice);
-    
+
     switch (type) {
-      case 'original':
-        return '🎌';
-      case 'dub':
-        return voice.language === 'ru' ? '🇷🇺' : '🎭';
-      case 'sub':
-        return '📝';
-      default:
-        return '🎵';
+    case 'original':
+      return '🎌';
+    case 'dub':
+      return voice.language === 'ru' ? '🇷🇺' : '🎭';
+    case 'sub':
+      return '📝';
+    default:
+      return '🎵';
     }
   },
 
@@ -203,13 +203,13 @@ export const VideoUtils = {
 
       // Проверяем временные метки
       const timeMatch = line.match(/^(\d{2}:)?(\d{2}):(\d{2})\.(\d{3})\s+-->\s+(\d{2}:)?(\d{2}):(\d{2})\.(\d{3})$/);
-      
+
       if (timeMatch) {
         // Создаем новую реплику
         currentCue = {
           start: VideoUtils.parseVTTTime(timeMatch[0].split(' --> ')[0]),
           end: VideoUtils.parseVTTTime(timeMatch[0].split(' --> ')[1]),
-          text: ''
+          text: '',
         };
         continue;
       }
@@ -217,7 +217,7 @@ export const VideoUtils = {
       // Если есть текущая реплика и строка не пустая
       if (currentCue && line) {
         if (currentCue.text) {
-          currentCue.text += '\n' + line;
+          currentCue.text += `\n${  line}`;
         } else {
           currentCue.text = line;
         }
@@ -250,7 +250,7 @@ export const VideoUtils = {
     }
 
     return seconds;
-  }
+  },
 };
 
 // Константы для настроек плееров
@@ -312,8 +312,8 @@ export const PlayerDefaults = {
     color: '#ffffff',
     background: 'rgba(0, 0, 0, 0.8)',
     position: 'bottom',
-    offset: 80
-  }
+    offset: 80,
+  },
 };
 
 // Типы событий плеера

@@ -169,7 +169,7 @@ const SAMPLE_VOICES = [
     type: 'original',
     quality: 'high',
     studio: 'Original',
-    description: 'Оригинальная японская озвучка'
+    description: 'Оригинальная японская озвучка',
   },
   {
     id: 'anilibria',
@@ -178,7 +178,7 @@ const SAMPLE_VOICES = [
     type: 'dub',
     quality: 'high',
     studio: 'AniLibria',
-    description: 'Русская озвучка от AniLibria'
+    description: 'Русская озвучка от AniLibria',
   },
   {
     id: 'anidub',
@@ -187,7 +187,7 @@ const SAMPLE_VOICES = [
     type: 'dub',
     quality: 'medium',
     studio: 'AniDub',
-    description: 'Русская озвучка от AniDub'
+    description: 'Русская озвучка от AniDub',
   },
   {
     id: 'animaunt',
@@ -196,8 +196,8 @@ const SAMPLE_VOICES = [
     type: 'dub',
     quality: 'medium',
     studio: 'Anima.unt',
-    description: 'Русская озвучка от Anima.unt'
-  }
+    description: 'Русская озвучка от Anima.unt',
+  },
 ];
 
 const VoiceSelector = ({
@@ -206,7 +206,7 @@ const VoiceSelector = ({
   onVoiceChange,
   disabled = false,
   className,
-  style
+  style,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [availableVoices, setAvailableVoices] = useState([]);
@@ -246,27 +246,27 @@ const VoiceSelector = ({
 
   const getVoiceIcon = (voice) => {
     switch (voice.type) {
-      case 'original':
-        return '🎌';
-      case 'dub':
-        return voice.language === 'RU' ? '🇷🇺' : '🎭';
-      case 'sub':
-        return '📝';
-      default:
-        return '🎵';
+    case 'original':
+      return '🎌';
+    case 'dub':
+      return voice.language === 'RU' ? '🇷🇺' : '🎭';
+    case 'sub':
+      return '📝';
+    default:
+      return '🎵';
     }
   };
 
   const getQualityColor = (quality) => {
     switch (quality) {
-      case 'high':
-        return '#28a745';
-      case 'medium':
-        return '#ffc107';
-      case 'low':
-        return '#dc3545';
-      default:
-        return '#6c757d';
+    case 'high':
+      return '#28a745';
+    case 'medium':
+      return '#ffc107';
+    case 'low':
+      return '#dc3545';
+    default:
+      return '#6c757d';
     }
   };
 
@@ -307,7 +307,7 @@ const VoiceSelector = ({
             Доступные озвучки
           </VoiceHeader>
         )}
-        
+
         {availableVoices.length === 0 ? (
           <NoVoicesMessage>
             Озвучки не найдены
@@ -320,7 +320,7 @@ const VoiceSelector = ({
               onClick={() => handleVoiceSelect(index)}
             >
               <span className="voice-icon">{getVoiceIcon(voice)}</span>
-              
+
               <div className="voice-info">
                 <div className="voice-title">{voice.name}</div>
                 <div className="voice-meta">

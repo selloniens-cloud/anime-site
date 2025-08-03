@@ -7,7 +7,7 @@ import {
   saveVideoProgress,
   loadVideoProgress,
   getVideoSettings,
-  saveVideoSettings
+  saveVideoSettings,
 } from '../../utils/videoProgress';
 
 const PlayerContainer = styled.div`
@@ -356,7 +356,7 @@ const AniLibertyPlayer = ({
   onEpisodeChange,
   onQualityChange,
   className,
-  style
+  style,
 }) => {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -373,7 +373,7 @@ const AniLibertyPlayer = ({
   const [buffered, setBuffered] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Состояния UI
   const [controlsVisible, setControlsVisible] = useState(true);
   const [showCursor, setShowCursor] = useState(true);
@@ -410,7 +410,7 @@ const AniLibertyPlayer = ({
     if (hideControlsTimeoutRef.current) {
       clearTimeout(hideControlsTimeoutRef.current);
     }
-    
+
     hideControlsTimeoutRef.current = setTimeout(() => {
       if (isPlaying) {
         setControlsVisible(false);
@@ -432,7 +432,7 @@ const AniLibertyPlayer = ({
       setError(null);
 
       const response = await fetch(
-        `/api/video/video?anime_id=${animeId}&episode=${episodeId}&quality=${currentQuality}&voice=${currentVoice}`
+        `/api/video/video?anime_id=${animeId}&episode=${episodeId}&quality=${currentQuality}&voice=${currentVoice}`,
       );
 
       if (!response.ok) {
@@ -440,18 +440,18 @@ const AniLibertyPlayer = ({
       }
 
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Ошибка получения видео');
       }
 
       setVideoData(data);
-      
+
       // Получаем доступные качества
       const qualitiesResponse = await fetch(
-        `/api/video/qualities?anime_id=${animeId}&episode=${episodeId}`
+        `/api/video/qualities?anime_id=${animeId}&episode=${episodeId}`,
       );
-      
+
       if (qualitiesResponse.ok) {
         const qualitiesData = await qualitiesResponse.json();
         if (qualitiesData.success && qualitiesData.qualities) {
@@ -496,7 +496,7 @@ const AniLibertyPlayer = ({
           maxBufferLength: 30,
           maxMaxBufferLength: 600,
           startLevel: -1, // auto quality
-          capLevelToPlayerSize: true
+          capLevelToPlayerSize: true,
         });
 
         hls.loadSource(videoUrl);
@@ -505,7 +505,7 @@ const AniLibertyPlayer = ({
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           console.log('HLS manifest parsed');
           setIsLoading(false);
-          
+
           if (autoPlay) {
             playVideo();
           }
@@ -586,7 +586,7 @@ const AniLibertyPlayer = ({
       const current = video.currentTime;
       setCurrentTime(current);
       onTimeUpdate?.(current);
-      
+
       // Сохраняем прогресс
       if (animeId && episodeId && current > 0 && duration > 0) {
         const progress = (current / duration) * 100;
@@ -598,7 +598,7 @@ const AniLibertyPlayer = ({
     const handleLoadedMetadata = () => {
       const dur = video.duration;
       setDuration(dur);
-      
+
       // Восстанавливаем позицию просмотра
       if (animeId && episodeId) {
         const savedProgress = loadVideoProgress(animeId, episodeId);
@@ -619,7 +619,7 @@ const AniLibertyPlayer = ({
     const handleVolumeChange = () => {
       setVolume(video.volume);
       setIsMuted(video.muted);
-      
+
       // Сохраняем настройки
       saveVideoSettings({ volume: video.volume, muted: video.muted });
     };
@@ -716,7 +716,7 @@ const AniLibertyPlayer = ({
 
   useHotkeys('left', () => seekTo(currentTime - 10));
   useHotkeys('right', () => seekTo(currentTime + 10));
-  
+
   useHotkeys('up', () => {
     const newVolume = Math.min(1, volume + 0.1);
     if (videoRef.current) videoRef.current.volume = newVolume;
@@ -746,11 +746,11 @@ const AniLibertyPlayer = ({
   // Форматирование времени
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return '00:00';
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -813,7 +813,7 @@ const AniLibertyPlayer = ({
         <InfoBadge>
           {videoData?.episode?.title || `Эпизод ${episodeId}`}
         </InfoBadge>
-        
+
         <QualityBadge>
           {currentQuality === 'auto' ? 'AUTO' : currentQuality.toUpperCase()}
         </QualityBadge>

@@ -86,11 +86,11 @@ const AnimeCardWrapper = styled.div`
   position: relative;
 `;
 
-const NewAnimeSection = ({ 
-  limit = 10, 
-  showTitle = true, 
-  title = "✨ Недавно добавленные аниме",
-  onAnimeClick
+const NewAnimeSection = ({
+  limit = 10,
+  showTitle = true,
+  title = '✨ Недавно добавленные аниме',
+  onAnimeClick,
 }) => {
   const [newAnime, setNewAnime] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,21 +106,21 @@ const NewAnimeSection = ({
       setError(null);
 
       console.log('🚀 Загрузка новых аниме...');
-      
+
       const response = await anilibriaV2Service.getNewAnime({
         perPage: limit,
-        page: 1
+        page: 1,
       });
 
       let animeList = [];
-      
+
       if (response?.data && Array.isArray(response.data)) {
-        animeList = response.data.map(anime => 
-          anilibriaV2Service.convertAnimeToFormat(anime)
+        animeList = response.data.map(anime =>
+          anilibriaV2Service.convertAnimeToFormat(anime),
         );
       } else if (response && Array.isArray(response)) {
-        animeList = response.map(anime => 
-          anilibriaV2Service.convertAnimeToFormat(anime)
+        animeList = response.map(anime =>
+          anilibriaV2Service.convertAnimeToFormat(anime),
         );
       }
 
@@ -142,11 +142,11 @@ const NewAnimeSection = ({
   // Проверяем, является ли аниме новым (добавлено за последние 30 дней)
   const isNewAnime = (anime) => {
     if (!anime.fresh_at && !anime.updated_at) return true; // Если нет даты, считаем новым
-    
+
     const animeDate = new Date(anime.fresh_at || anime.updated_at);
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     return animeDate > thirtyDaysAgo;
   };
 
@@ -168,7 +168,7 @@ const NewAnimeSection = ({
         <ErrorMessage>
           {error}
           <br />
-          <button 
+          <button
             onClick={handleRetry}
             style={{
               marginTop: '15px',
@@ -177,7 +177,7 @@ const NewAnimeSection = ({
               border: '1px solid currentColor',
               borderRadius: '6px',
               color: 'inherit',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             Попробовать снова
@@ -217,8 +217,8 @@ const NewAnimeSection = ({
           >
             <AnimeCardWrapper>
               {isNewAnime(anime) && <NewBadge />}
-              <AnimeCard 
-                anime={anime} 
+              <AnimeCard
+                anime={anime}
                 onClick={() => onAnimeClick?.(anime)}
               />
             </AnimeCardWrapper>

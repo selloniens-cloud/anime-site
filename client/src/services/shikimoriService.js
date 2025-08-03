@@ -8,5 +8,5 @@ export const shikimoriService = {
   async searchAnime(query) {
     const response = await api.get('/api/anime/shikimori', { params: { search: query } });
     return response.data;
-  }
+  },
 };

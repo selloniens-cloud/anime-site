@@ -33,7 +33,7 @@ export const saveVideoProgress = (animeId, episodeId, currentTime, duration, wat
       quality: metadata.quality || 'auto',
       voice: metadata.voice || 0,
       subtitles: metadata.subtitles || false,
-      version: 2 // Версия формата данных
+      version: 2, // Версия формата данных
     };
 
     localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(progressData));
@@ -163,13 +163,13 @@ export const getVideoSettings = () => {
         color: '#ffffff',
         background: 'rgba(0, 0, 0, 0.8)',
         position: 'bottom',
-        offset: 80
+        offset: 80,
       },
       voice: 0, // Индекс выбранной озвучки
       playerType: 'aniliberty', // 'aniliberty', 'videojs', 'plyr', 'html5'
       theme: 'dark', // 'dark', 'light', 'auto'
       hotkeysEnabled: true,
-      version: 2 // Версия настроек
+      version: 2, // Версия настроек
     };
 
     if (!settings) {
@@ -177,7 +177,7 @@ export const getVideoSettings = () => {
     }
 
     const parsed = JSON.parse(settings);
-    
+
     // Миграция старых настроек
     if (!parsed.version || parsed.version < 2) {
       const migrated = { ...defaultSettings, ...parsed, version: 2 };
@@ -201,13 +201,13 @@ export const getVideoSettings = () => {
         color: '#ffffff',
         background: 'rgba(0, 0, 0, 0.8)',
         position: 'bottom',
-        offset: 80
+        offset: 80,
       },
       voice: 0,
       playerType: 'aniliberty',
       theme: 'dark',
       hotkeysEnabled: true,
-      version: 2
+      version: 2,
     };
   }
 };
@@ -224,15 +224,15 @@ export const saveVideoSettings = (newSettings) => {
       ...currentSettings,
       ...newSettings,
       lastUpdated: new Date().toISOString(),
-      version: 2
+      version: 2,
     };
 
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updatedSettings));
-    
+
     // Уведомляем другие вкладки об изменении настроек
     if (typeof window !== 'undefined' && window.dispatchEvent) {
       window.dispatchEvent(new CustomEvent('videoSettingsChanged', {
-        detail: updatedSettings
+        detail: updatedSettings,
       }));
     }
 
@@ -276,8 +276,8 @@ export const saveSubtitleSettings = (subtitleSettings) => {
   return saveVideoSettings({
     subtitleSettings: {
       ...currentSettings.subtitleSettings,
-      ...subtitleSettings
-    }
+      ...subtitleSettings,
+    },
   });
 };
 
@@ -326,7 +326,7 @@ export const getLastQualityForAnime = (animeId) => {
 
 /**
  * Сохранение выбранного качества для аниме
- * @param {string} animeId - ID аниме  
+ * @param {string} animeId - ID аниме
  * @param {string} quality - Качество видео
  * @returns {boolean} Успешность сохранения
  */

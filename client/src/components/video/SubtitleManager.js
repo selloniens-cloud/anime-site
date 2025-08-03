@@ -125,13 +125,13 @@ class WebVTTParser {
 
       // Проверяем временные метки
       const timeMatch = line.match(/^(\d{2}:)?(\d{2}):(\d{2})\.(\d{3})\s+-->\s+(\d{2}:)?(\d{2}):(\d{2})\.(\d{3})$/);
-      
+
       if (timeMatch) {
         // Создаем новую реплику
         currentCue = {
           start: this.parseTime(timeMatch[0].split(' --> ')[0]),
           end: this.parseTime(timeMatch[0].split(' --> ')[1]),
-          text: ''
+          text: '',
         };
         continue;
       }
@@ -139,7 +139,7 @@ class WebVTTParser {
       // Если есть текущая реплика и строка не пустая
       if (currentCue && line) {
         if (currentCue.text) {
-          currentCue.text += '\n' + line;
+          currentCue.text += `\n${  line}`;
         } else {
           currentCue.text = line;
         }
@@ -180,12 +180,12 @@ const SubtitleManager = ({
   enabled = false,
   onSettingsToggle,
   showSettings = false,
-  style
+  style,
 }) => {
   const [currentSubtitle, setCurrentSubtitle] = useState('');
   const [activeTrack, setActiveTrack] = useState(0);
   const [subtitleCues, setSubtitleCues] = useState([]);
-  
+
   // Настройки субтитров
   const [settings, setSettings] = useState({
     fontSize: '18px',
@@ -195,7 +195,7 @@ const SubtitleManager = ({
     color: '#ffffff',
     background: 'rgba(0, 0, 0, 0.8)',
     position: 'bottom',
-    offset: 80
+    offset: 80,
   });
 
   // Загрузка субтитров при смене трека
@@ -216,7 +216,7 @@ const SubtitleManager = ({
     }
 
     const currentCue = subtitleCues.find(
-      cue => currentTime >= cue.start && currentTime <= cue.end
+      cue => currentTime >= cue.start && currentTime <= cue.end,
     );
 
     setCurrentSubtitle(currentCue ? currentCue.text : '');
@@ -228,13 +228,13 @@ const SubtitleManager = ({
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
+
       const vttText = await response.text();
       const cues = WebVTTParser.parse(vttText);
-      
+
       console.log(`Loaded ${cues.length} subtitle cues from ${track.label}`);
       setSubtitleCues(cues);
-      
+
     } catch (error) {
       console.error('Error loading subtitles:', error);
       setSubtitleCues([]);
@@ -244,7 +244,7 @@ const SubtitleManager = ({
   const updateSetting = (key, value) => {
     setSettings(prev => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
@@ -274,7 +274,7 @@ const SubtitleManager = ({
           color={settings.color}
           background={settings.background}
           dangerouslySetInnerHTML={{
-            __html: currentSubtitle.replace(/\n/g, '<br>')
+            __html: currentSubtitle.replace(/\n/g, '<br>'),
           }}
         />
       </SubtitleOverlay>

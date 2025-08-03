@@ -180,7 +180,7 @@ const WatchPage = () => {
   useEffect(() => {
     const settings = getVideoSettings();
     const preferences = getPlayerPreferences();
-    
+
     setPlayerSettings(settings);
     setPlayerPreferences(preferences);
   }, []);
@@ -190,7 +190,7 @@ const WatchPage = () => {
     if (episodeId) {
       const savedProgress = loadVideoProgress('episode', episodeId);
       setVideoProgress(savedProgress);
-      
+
       if (savedProgress) {
         setProgress((savedProgress.currentTime / (savedProgress.duration || 1440)) * 100);
       }
@@ -207,15 +207,15 @@ const WatchPage = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log(`🎬 Загрузка эпизода ${episodeId}...`);
-      
+
       // Получаем данные эпизода
       const episodeData = await anilibriaV2Service.getEpisodeById(episodeId);
       const convertedEpisode = anilibriaV2Service.convertEpisodeToFormat(episodeData);
-      
+
       setEpisode(convertedEpisode);
-      
+
       // Если есть ID аниме, загружаем информацию об аниме
       if (convertedEpisode.animeId) {
         try {
@@ -226,9 +226,9 @@ const WatchPage = () => {
           console.warn('Не удалось загрузить информацию об аниме:', animeError);
         }
       }
-      
-      console.log(`✅ Эпизод загружен:`, convertedEpisode.title);
-      
+
+      console.log('✅ Эпизод загружен:', convertedEpisode.title);
+
     } catch (err) {
       console.error('Ошибка загрузки эпизода:', err);
       setError(`Не удалось загрузить эпизод: ${err.message}`);
@@ -239,13 +239,13 @@ const WatchPage = () => {
 
   const handleProgress = useCallback((progressData) => {
     const { played, playedSeconds, episode: currentEpisode } = progressData;
-    
+
     if (currentEpisode && playedSeconds > 0) {
       const duration = currentEpisode.duration || 1440; // 24 минуты по умолчанию
       const newProgress = played * 100;
-      
+
       setProgress(newProgress);
-      
+
       // Сохраняем прогресс каждые 10 секунд
       const now = Date.now();
       if (!videoProgress || now - (videoProgress.lastSaved || 0) > 10000) {
@@ -254,7 +254,7 @@ const WatchPage = () => {
           currentTime: playedSeconds,
           duration,
           progress: newProgress,
-          lastSaved: now
+          lastSaved: now,
         });
       }
     }
@@ -288,7 +288,7 @@ const WatchPage = () => {
           <ErrorMessage>
             {error}
             <br />
-            <button 
+            <button
               onClick={loadEpisodeData}
               style={{
                 marginTop: '15px',
@@ -297,7 +297,7 @@ const WatchPage = () => {
                 border: '1px solid currentColor',
                 borderRadius: '6px',
                 color: 'inherit',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
               Попробовать снова
@@ -385,8 +385,8 @@ const WatchPage = () => {
           <div className="progress-text">
             <span>Прогресс просмотра: {Math.round(progress)}%</span>
             <span>
-              {videoProgress ? 
-                `${Math.round(videoProgress.currentTime / 60)} / ${Math.round((videoProgress.duration || 1440) / 60)} мин` : 
+              {videoProgress ?
+                `${Math.round(videoProgress.currentTime / 60)} / ${Math.round((videoProgress.duration || 1440) / 60)} мин` :
                 ''}
             </span>
           </div>

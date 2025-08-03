@@ -191,24 +191,24 @@ const EmptyState = styled.div`
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
-  
+
   const date = new Date(dateString);
   const now = new Date();
   const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-  
+
   if (diffInHours < 1) return 'Только что';
   if (diffInHours < 24) return `${diffInHours} ч. назад`;
-  
+
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 7) return `${diffInDays} дн. назад`;
-  
+
   return date.toLocaleDateString('ru-RU');
 };
 
-const NewEpisodesSection = ({ 
-  limit = 10, 
-  showTitle = true, 
-  title = "🆕 Новые эпизоды"
+const NewEpisodesSection = ({
+  limit = 10,
+  showTitle = true,
+  title = '🆕 Новые эпизоды',
 }) => {
   const [episodes, setEpisodes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -224,14 +224,14 @@ const NewEpisodesSection = ({
       setError(null);
 
       console.log('🚀 Загрузка новых эпизодов...');
-      
+
       const response = await anilibriaV2Service.getNewEpisodes({
         perPage: limit,
-        page: 1
+        page: 1,
       });
 
       let episodesList = [];
-      
+
       if (response?.data && Array.isArray(response.data)) {
         episodesList = response.data;
       } else if (response && Array.isArray(response)) {
@@ -271,7 +271,7 @@ const NewEpisodesSection = ({
         <ErrorMessage>
           {error}
           <br />
-          <button 
+          <button
             onClick={handleRetry}
             style={{
               marginTop: '15px',
@@ -280,7 +280,7 @@ const NewEpisodesSection = ({
               border: '1px solid currentColor',
               borderRadius: '6px',
               color: 'inherit',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             Попробовать снова
@@ -315,7 +315,7 @@ const NewEpisodesSection = ({
           const animeTitle = episode.name?.main || episode.title || 'Без названия';
           const episodeTitle = episode.name || `Эпизод ${episode.ordinal || episode.number || index + 1}`;
           const posterUrl = anilibriaV2Service.getOptimizedImageUrl(episode.poster);
-          
+
           return (
             <motion.div
               key={episode.id || index}
@@ -326,8 +326,8 @@ const NewEpisodesSection = ({
               <EpisodeCard>
                 <EpisodeImage>
                   {posterUrl ? (
-                    <img 
-                      src={posterUrl} 
+                    <img
+                      src={posterUrl}
                       alt={animeTitle}
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -340,30 +340,30 @@ const NewEpisodesSection = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '3rem'
+                      fontSize: '3rem',
                     }}>
                       🎭
                     </div>
                   )}
-                  
+
                   <EpisodeBadge>
                     Эп. {episode.ordinal || episode.number || index + 1}
                   </EpisodeBadge>
-                  
+
                   <PlayButton />
                 </EpisodeImage>
 
                 <EpisodeContent>
                   <AnimeTitle>{animeTitle}</AnimeTitle>
                   <EpisodeTitle>{episodeTitle}</EpisodeTitle>
-                  
+
                   <EpisodeMeta>
                     <span>{formatDate(episode.updated_at || episode.created_at)}</span>
                     <span>
                       {episode.duration ? `${Math.round(episode.duration / 60)} мин` : '~24 мин'}
                     </span>
                   </EpisodeMeta>
-                  
+
                   <WatchButton to={`/anime/${episode.id}`}>
                     Смотреть аниме
                   </WatchButton>

@@ -249,19 +249,19 @@ const getStatusText = (status) => {
 // Утилита для получения заголовка аниме
 const getAnimeTitle = (anime) => {
   if (typeof anime.title === 'string') return anime.title;
-  
+
   // Структура AniLibria API
   if (anime.names?.ru) return anime.names.ru;
   if (anime.names?.en) return anime.names.en;
   if (anime.names?.alternative) return anime.names.alternative;
-  
+
   // Структура нашей модели
   if (anime.title?.ru) return anime.title.ru;
   if (anime.title?.en) return anime.title.en;
   if (anime.title?.romaji) return anime.title.romaji;
   if (anime.title?.english) return anime.title.english;
   if (anime.title?.japanese) return anime.title.japanese;
-  
+
   return 'Без названия';
 };
 
@@ -269,7 +269,7 @@ const getAnimeTitle = (anime) => {
 const getAnimePoster = (anime) => {
   // Прямая ссылка на постер
   if (typeof anime.poster === 'string' && anime.poster) return anime.poster;
-  
+
   // Структура AniLibria API - исправляем URL
   if (anime.posters?.medium?.url) {
     const url = anime.posters.medium.url;
@@ -284,16 +284,16 @@ const getAnimePoster = (anime) => {
     const url = anime.posters.original.url;
     return url.startsWith('http') ? url : `https://www.anilibria.tv${url}`;
   }
-  
+
   // Структура нашей модели
   if (anime.images?.poster?.medium) return anime.images.poster.medium;
   if (anime.images?.poster?.small) return anime.images.poster.small;
   if (anime.images?.poster?.large) return anime.images.poster.large;
-  
+
   // MyAnimeList структура
   if (anime.images?.jpg?.large_image_url) return anime.images.jpg.large_image_url;
   if (anime.images?.jpg?.image_url) return anime.images.jpg.image_url;
-  
+
   return null;
 };
 
@@ -397,13 +397,13 @@ const AnimeCard = ({ anime }) => {
           />
         ) : (
           <ImagePlaceholder>
-            <img 
-              src="/no-image.svg" 
+            <img
+              src="/no-image.svg"
               alt="Изображение не найдено"
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover'
+                objectFit: 'cover',
               }}
             />
           </ImagePlaceholder>

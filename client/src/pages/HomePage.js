@@ -115,22 +115,22 @@ const HomePage = () => {
       setSearchQuery(query);
 
       console.log(`🔍 Поиск аниме: "${query}"`);
-      
+
       const response = await anilibriaV2Service.searchAnime(query, {
         perPage: 20,
         page: 1,
-        ...filters
+        ...filters,
       });
 
       let results = [];
-      
+
       if (response?.data && Array.isArray(response.data)) {
-        results = response.data.map(anime => 
-          anilibriaV2Service.convertAnimeToFormat(anime)
+        results = response.data.map(anime =>
+          anilibriaV2Service.convertAnimeToFormat(anime),
         );
       } else if (response && Array.isArray(response)) {
-        results = response.map(anime => 
-          anilibriaV2Service.convertAnimeToFormat(anime)
+        results = response.map(anime =>
+          anilibriaV2Service.convertAnimeToFormat(anime),
         );
       }
 
@@ -193,7 +193,7 @@ const HomePage = () => {
               <ErrorMessage>
                 {searchError}
                 <br />
-                <button 
+                <button
                   onClick={() => handleSearch(searchQuery)}
                   style={{
                     marginTop: '15px',
@@ -202,7 +202,7 @@ const HomePage = () => {
                     border: '1px solid currentColor',
                     borderRadius: '6px',
                     color: 'inherit',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
                   }}
                 >
                   Повторить поиск
@@ -213,9 +213,9 @@ const HomePage = () => {
             {searchResults.length > 0 && !searchLoading && (
               <SearchGrid>
                 {searchResults.map((anime, index) => (
-                  <AnimeCard 
-                    key={anime.id || index} 
-                    anime={anime} 
+                  <AnimeCard
+                    key={anime.id || index}
+                    anime={anime}
                     onClick={() => handleAnimeClick(anime)}
                   />
                 ))}
@@ -232,16 +232,16 @@ const HomePage = () => {
 
         {!searchQuery && (
           <>
-            <PopularSection 
+            <PopularSection
               limit={12}
               onAnimeClick={handleAnimeClick}
             />
-            
-            <NewEpisodesSection 
+
+            <NewEpisodesSection
               limit={10}
             />
-            
-            <NewAnimeSection 
+
+            <NewAnimeSection
               limit={12}
               onAnimeClick={handleAnimeClick}
             />

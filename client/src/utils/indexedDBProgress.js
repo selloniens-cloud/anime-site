@@ -9,7 +9,7 @@ const STORES = {
   PROGRESS: 'video_progress',
   SETTINGS: 'video_settings',
   STATS: 'watch_stats',
-  HISTORY: 'watch_history'
+  HISTORY: 'watch_history',
 };
 
 let dbInstance = null;
@@ -76,13 +76,13 @@ const executeTransaction = async (storeName, mode, operation) => {
     const db = await initDB();
     const transaction = db.transaction([storeName], mode);
     const store = transaction.objectStore(storeName);
-    
+
     return new Promise((resolve, reject) => {
       const request = operation(store);
-      
+
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
-      
+
       transaction.onerror = () => reject(transaction.error);
     });
   } catch (error) {
@@ -109,7 +109,7 @@ export const saveVideoProgressDB = async (animeId, episodeId, currentTime, durat
       voice: metadata.voice || 0,
       subtitles: metadata.subtitles || false,
       playerType: metadata.playerType || 'aniliberty',
-      version: 3 // Версия формата IndexedDB
+      version: 3, // Версия формата IndexedDB
     };
 
     await executeTransaction(STORES.PROGRESS, 'readwrite', (store) => {
@@ -133,7 +133,7 @@ export const saveVideoProgressDB = async (animeId, episodeId, currentTime, durat
 export const loadVideoProgressDB = async (animeId, episodeId) => {
   try {
     const id = `${animeId}_${episodeId}`;
-    
+
     const result = await executeTransaction(STORES.PROGRESS, 'readonly', (store) => {
       return store.get(id);
     });
@@ -177,7 +177,7 @@ export const saveVideoSettingsDB = async (settings) => {
       key: 'main',
       ...settings,
       lastUpdated: new Date().toISOString(),
-      version: 3
+      version: 3,
     };
 
     await executeTransaction(STORES.SETTINGS, 'readwrite', (store) => {
@@ -213,7 +213,7 @@ export const getVideoSettingsDB = async () => {
         color: '#ffffff',
         background: 'rgba(0, 0, 0, 0.8)',
         position: 'bottom',
-        offset: 80
+        offset: 80,
       },
       voice: 0,
       playerType: 'aniliberty',
@@ -222,7 +222,7 @@ export const getVideoSettingsDB = async () => {
       autoSave: true,
       seekStep: 10,
       volumeStep: 0.1,
-      version: 3
+      version: 3,
     };
 
     return result ? { ...defaultSettings, ...result } : defaultSettings;
@@ -243,7 +243,7 @@ const saveWatchHistory = async (animeId, episodeId, currentTime, duration) => {
       currentTime,
       duration,
       timestamp: new Date().toISOString(),
-      watchDate: new Date().toDateString()
+      watchDate: new Date().toDateString(),
     };
 
     await executeTransaction(STORES.HISTORY, 'readwrite', (store) => {
@@ -300,7 +300,7 @@ export const getWatchingStatsDB = async () => {
       mostWatchedAnime: null,
       watchingStreak: 0,
       favoriteQuality: 'auto',
-      favoritePlayerType: 'aniliberty'
+      favoritePlayerType: 'aniliberty',
     };
 
     if (stats.totalEpisodes > 0) {
@@ -308,8 +308,8 @@ export const getWatchingStatsDB = async () => {
       stats.averageWatchPercent = Math.round(totalPercent / stats.totalEpisodes);
 
       // Находим последний просмотренный
-      const sortedByDate = progressResults.sort((a, b) => 
-        new Date(b.lastWatched) - new Date(a.lastWatched)
+      const sortedByDate = progressResults.sort((a, b) =>
+        new Date(b.lastWatched) - new Date(a.lastWatched),
       );
       stats.lastWatched = sortedByDate[0]?.lastWatched;
 
@@ -340,11 +340,11 @@ export const getWatchingStatsDB = async () => {
         playerCount[p.playerType] = (playerCount[p.playerType] || 0) + 1;
       });
 
-      stats.favoriteQuality = Object.keys(qualityCount).reduce((a, b) => 
-        qualityCount[a] > qualityCount[b] ? a : b
+      stats.favoriteQuality = Object.keys(qualityCount).reduce((a, b) =>
+        qualityCount[a] > qualityCount[b] ? a : b,
       );
-      stats.favoritePlayerType = Object.keys(playerCount).reduce((a, b) => 
-        playerCount[a] > playerCount[b] ? a : b
+      stats.favoritePlayerType = Object.keys(playerCount).reduce((a, b) =>
+        playerCount[a] > playerCount[b] ? a : b,
       );
     }
 
@@ -360,7 +360,7 @@ export const getWatchingStatsDB = async () => {
       mostWatchedAnime: null,
       watchingStreak: 0,
       favoriteQuality: 'auto',
-      favoritePlayerType: 'aniliberty'
+      favoritePlayerType: 'aniliberty',
     };
   }
 };
@@ -379,7 +379,7 @@ export const migrateFromLocalStorage = async () => {
     const oldProgress = getVideoProgress();
     if (Object.keys(oldProgress).length > 0) {
       console.log(`Мигрируем ${Object.keys(oldProgress).length} записей прогресса...`);
-      
+
       for (const [key, progress] of Object.entries(oldProgress)) {
         const [animeId, episodeId] = key.split('_');
         if (animeId && episodeId) {
@@ -393,8 +393,8 @@ export const migrateFromLocalStorage = async () => {
               quality: progress.quality,
               voice: progress.voice,
               subtitles: progress.subtitles,
-              playerType: progress.playerType || 'aniliberty'
-            }
+              playerType: progress.playerType || 'aniliberty',
+            },
           );
         }
       }
@@ -429,7 +429,7 @@ const saveVideoProgressFallback = (animeId, episodeId, currentTime, duration, wa
       watchedPercent: Math.round(watchedPercent),
       lastWatched: new Date().toISOString(),
       completed: watchedPercent >= 90,
-      ...metadata
+      ...metadata,
     };
     localStorage.setItem(key, JSON.stringify(data));
     return true;
@@ -465,7 +465,7 @@ export const exportAllDataDB = async () => {
     const [progress, settings, stats] = await Promise.all([
       executeTransaction(STORES.PROGRESS, 'readonly', (store) => store.getAll()),
       executeTransaction(STORES.SETTINGS, 'readonly', (store) => store.getAll()),
-      getWatchingStatsDB()
+      getWatchingStatsDB(),
     ]);
 
     return {
@@ -474,7 +474,7 @@ export const exportAllDataDB = async () => {
       stats,
       exportDate: new Date().toISOString(),
       version: 3,
-      source: 'IndexedDB'
+      source: 'IndexedDB',
     };
   } catch (error) {
     console.error('Ошибка экспорта данных из IndexedDB:', error);
@@ -491,7 +491,7 @@ export const clearAllDataDB = async () => {
       executeTransaction(STORES.PROGRESS, 'readwrite', (store) => store.clear()),
       executeTransaction(STORES.SETTINGS, 'readwrite', (store) => store.clear()),
       executeTransaction(STORES.STATS, 'readwrite', (store) => store.clear()),
-      executeTransaction(STORES.HISTORY, 'readwrite', (store) => store.clear())
+      executeTransaction(STORES.HISTORY, 'readwrite', (store) => store.clear()),
     ]);
 
     return true;

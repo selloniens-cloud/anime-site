@@ -89,7 +89,7 @@ const fallbackAnime = [
     genres: ['Комедия', 'Пародия', 'Фэнтези', 'Экшен'],
     episodes: 13,
     rating: 7.9,
-  }
+  },
 ];
 
 const CatalogPage = ({ filter }) => {
@@ -137,8 +137,8 @@ const CatalogPage = ({ filter }) => {
         try {
           const anilibriaResult = await anilibriaService.getPopular(50);
           if (anilibriaResult?.success && anilibriaResult.data?.data) {
-            list = anilibriaResult.data.data.map(title => 
-              anilibriaService.formatAnimeData(title)
+            list = anilibriaResult.data.data.map(title =>
+              anilibriaService.formatAnimeData(title),
             );
             count = list.length;
           }

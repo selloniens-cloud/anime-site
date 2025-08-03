@@ -235,7 +235,7 @@ const QualityController = ({
   networkSpeed = 0,
   disabled = false,
   className,
-  style
+  style,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [detectedQuality, setDetectedQuality] = useState('auto');
@@ -257,7 +257,7 @@ const QualityController = ({
   useEffect(() => {
     if (networkSpeed > 0 && qualities.length > 0) {
       let optimalQuality = 'auto';
-      
+
       if (networkSpeed > 5000000) { // > 5 Mbps
         optimalQuality = '1080p';
       } else if (networkSpeed > 2500000) { // > 2.5 Mbps
@@ -289,7 +289,7 @@ const QualityController = ({
 
   const getQualityIcon = (quality) => {
     const height = parseInt(quality.height) || 0;
-    
+
     if (height >= 2160) return '🎬'; // 4K
     if (height >= 1440) return '🎥'; // 1440p
     if (height >= 1080) return '📺'; // 1080p
@@ -300,7 +300,7 @@ const QualityController = ({
 
   const getSignalStrength = (quality) => {
     const height = parseInt(quality.height) || 0;
-    
+
     if (height >= 1080) return 4;
     if (height >= 720) return 3;
     if (height >= 480) return 2;
@@ -348,13 +348,13 @@ const QualityController = ({
   }
 
   // Создаем расширенный список качеств с автоматическим
-  const extendedQualities = autoQualityEnabled 
+  const extendedQualities = autoQualityEnabled
     ? [{ label: 'auto', height: 'auto', bitrate: 0, name: 'Автоматическое' }, ...qualities]
     : qualities;
 
   return (
-    <QualityContainer 
-      className={`quality-controller ${className || ''}`} 
+    <QualityContainer
+      className={`quality-controller ${className || ''}`}
       style={style}
       ref={dropdownRef}
     >
@@ -386,7 +386,7 @@ const QualityController = ({
             )}
           </AutoQualityInfo>
         )}
-        
+
         {extendedQualities.length === 0 ? (
           <NoQualitiesMessage>
             Доступные качества не найдены
@@ -421,7 +421,7 @@ const QualityController = ({
                 {quality.label !== 'auto' && (
                   <div className="signal-bars">
                     {[1,2,3,4].map(bar => (
-                      <div 
+                      <div
                         key={bar}
                         className={`bar ${bar <= getSignalStrength(quality) ? 'active' : ''}`}
                       />

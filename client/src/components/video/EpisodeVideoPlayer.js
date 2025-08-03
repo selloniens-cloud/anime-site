@@ -169,12 +169,12 @@ const ProgressInfo = styled.div`
   }
 `;
 
-const EpisodeVideoPlayer = ({ 
+const EpisodeVideoPlayer = ({
   episodeId,
   animeId,
   autoPlay = false,
   onEpisodeChange,
-  onProgress: onProgressCallback
+  onProgress: onProgressCallback,
 }) => {
   const [episode, setEpisode] = useState(null);
   const [allEpisodes, setAllEpisodes] = useState([]);
@@ -186,7 +186,7 @@ const EpisodeVideoPlayer = ({
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  
+
   const playerRef = useRef(null);
 
   useEffect(() => {
@@ -205,28 +205,28 @@ const EpisodeVideoPlayer = ({
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log(`🎬 Загрузка эпизода ${episodeId}...`);
-      
+
       const episodeData = await anilibriaV2Service.getEpisodeById(episodeId);
       const convertedEpisode = anilibriaV2Service.convertEpisodeToFormat(episodeData);
-      
+
       setEpisode(convertedEpisode);
-      
+
       // Получаем доступные качества
       const availableQualities = anilibriaV2Service.getAvailableQualities(episodeData);
       setQualities(availableQualities);
-      
+
       // Устанавливаем видео URL
       const videoUrl = anilibriaV2Service.getVideoUrl(episodeData, selectedQuality);
       setVideoUrl(videoUrl);
-      
-      console.log(`✅ Эпизод загружен:`, {
+
+      console.log('✅ Эпизод загружен:', {
         title: convertedEpisode.title,
         videoUrl,
-        qualities: availableQualities.length
+        qualities: availableQualities.length,
       });
-      
+
     } catch (err) {
       console.error('Ошибка загрузки эпизода:', err);
       setError(`Не удалось загрузить эпизод: ${err.message}`);
@@ -238,17 +238,17 @@ const EpisodeVideoPlayer = ({
   const loadAllEpisodes = async () => {
     try {
       console.log(`📝 Загрузка списка эпизодов для аниме ${animeId}...`);
-      
+
       const episodesData = await anilibriaV2Service.getAnimeEpisodes(animeId);
-      
+
       if (Array.isArray(episodesData)) {
-        const convertedEpisodes = episodesData.map(ep => 
-          anilibriaV2Service.convertEpisodeToFormat(ep)
+        const convertedEpisodes = episodesData.map(ep =>
+          anilibriaV2Service.convertEpisodeToFormat(ep),
         );
         setAllEpisodes(convertedEpisodes);
         console.log(`✅ Загружено ${convertedEpisodes.length} эпизодов`);
       }
-      
+
     } catch (err) {
       console.warn('Не удалось загрузить список эпизодов:', err);
     }
@@ -257,7 +257,7 @@ const EpisodeVideoPlayer = ({
   const handleQualityChange = (quality) => {
     if (episode) {
       setSelectedQuality(quality);
-      
+
       // Находим URL для выбранного качества
       const qualityItem = qualities.find(q => q.label === quality);
       if (qualityItem) {
@@ -277,14 +277,14 @@ const EpisodeVideoPlayer = ({
     const { played, playedSeconds, loaded, loadedSeconds } = progressData;
     setProgress(played * 100);
     setCurrentTime(playedSeconds);
-    
+
     onProgressCallback?.({
       played,
       playedSeconds,
       loaded,
       loadedSeconds,
       episodeId,
-      episode
+      episode,
     });
   };
 
@@ -294,11 +294,11 @@ const EpisodeVideoPlayer = ({
 
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return '0:00';
-    
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -360,7 +360,7 @@ const EpisodeVideoPlayer = ({
             ))}
           </EpisodeDropdown>
         )}
-        
+
         {qualities.length > 1 && (
           <QualitySelector
             value={selectedQuality}
@@ -396,8 +396,8 @@ const EpisodeVideoPlayer = ({
                 lowLatencyMode: false,
                 backBufferLength: 90,
                 maxBufferLength: 30,
-              }
-            }
+              },
+            },
           }}
         />
       </PlayerWrapper>

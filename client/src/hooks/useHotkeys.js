@@ -21,7 +21,7 @@ const useVideoHotkeys = ({
   enabled = true,
   seekStep = 10,
   volumeStep = 0.1,
-  enableOnFormTags = false
+  enableOnFormTags = false,
 }) => {
   const pressedKeys = useRef(new Set());
   const lastKeyTime = useRef(0);
@@ -38,7 +38,7 @@ const useVideoHotkeys = ({
     if (!enableOnFormTags && isFormElement(event.target)) return true;
     if (event.ctrlKey && !['n', 'p', 's'].includes(event.key)) return true;
     if (event.altKey || event.metaKey) return true;
-    
+
     return false;
   }, [enabled, enableOnFormTags, isFormElement]);
 
@@ -48,7 +48,7 @@ const useVideoHotkeys = ({
     const key = event.key.toLowerCase();
     const code = event.code.toLowerCase();
     const now = Date.now();
-    
+
     // Предотвращаем повторное срабатывание для некоторых клавиш
     if (pressedKeys.current.has(key) && now - lastKeyTime.current < 150) {
       return;
@@ -60,141 +60,141 @@ const useVideoHotkeys = ({
     // Обработка комбинаций клавиш
     if (event.ctrlKey) {
       switch (key) {
-        case 'n':
-          event.preventDefault();
-          onNextEpisode?.();
-          break;
-        case 'p':
-          event.preventDefault();
-          onPrevEpisode?.();
-          break;
-        case 's':
-          event.preventDefault();
-          onSubtitleSettings?.();
-          break;
+      case 'n':
+        event.preventDefault();
+        onNextEpisode?.();
+        break;
+      case 'p':
+        event.preventDefault();
+        onPrevEpisode?.();
+        break;
+      case 's':
+        event.preventDefault();
+        onSubtitleSettings?.();
+        break;
       }
       return;
     }
 
     // Обработка одиночных клавиш
     switch (key) {
-      case ' ':
-      case 'spacebar':
-        event.preventDefault();
-        onPlayPause?.();
-        break;
+    case ' ':
+    case 'spacebar':
+      event.preventDefault();
+      onPlayPause?.();
+      break;
 
-      case 'arrowleft':
-      case 'left':
-        event.preventDefault();
-        onSeek?.(-seekStep);
-        break;
+    case 'arrowleft':
+    case 'left':
+      event.preventDefault();
+      onSeek?.(-seekStep);
+      break;
 
-      case 'arrowright':
-      case 'right':
-        event.preventDefault();
-        onSeek?.(seekStep);
-        break;
+    case 'arrowright':
+    case 'right':
+      event.preventDefault();
+      onSeek?.(seekStep);
+      break;
 
-      case 'arrowup':
-      case 'up':
-        event.preventDefault();
-        onVolumeChange?.(volumeStep);
-        break;
+    case 'arrowup':
+    case 'up':
+      event.preventDefault();
+      onVolumeChange?.(volumeStep);
+      break;
 
-      case 'arrowdown':
-      case 'down':
-        event.preventDefault();
-        onVolumeChange?.(-volumeStep);
-        break;
+    case 'arrowdown':
+    case 'down':
+      event.preventDefault();
+      onVolumeChange?.(-volumeStep);
+      break;
 
-      case 'm':
-        event.preventDefault();
-        onMute?.();
-        break;
+    case 'm':
+      event.preventDefault();
+      onMute?.();
+      break;
 
-      case 'f':
-        event.preventDefault();
-        onFullscreen?.();
-        break;
+    case 'f':
+      event.preventDefault();
+      onFullscreen?.();
+      break;
 
-      case 'c':
-        event.preventDefault();
-        onSubtitlesToggle?.();
-        break;
+    case 'c':
+      event.preventDefault();
+      onSubtitlesToggle?.();
+      break;
 
-      case 'q':
-        event.preventDefault();
-        onQualityToggle?.();
-        break;
+    case 'q':
+      event.preventDefault();
+      onQualityToggle?.();
+      break;
 
-      case 'v':
-        event.preventDefault();
-        onVoiceToggle?.();
-        break;
+    case 'v':
+      event.preventDefault();
+      onVoiceToggle?.();
+      break;
 
       // Быстрый переход по процентам (0-9)
-      case '0':
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-      case '5':
-      case '6':
-      case '7':
-      case '8':
-      case '9':
-        event.preventDefault();
-        const percent = parseInt(key) / 10;
-        onSeekToPercent?.(percent);
-        break;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      event.preventDefault();
+      const percent = parseInt(key) / 10;
+      onSeekToPercent?.(percent);
+      break;
 
       // Изменение скорости воспроизведения
-      case ',':
-      case '<':
-        event.preventDefault();
-        onSpeedChange?.(-0.25);
-        break;
+    case ',':
+    case '<':
+      event.preventDefault();
+      onSpeedChange?.(-0.25);
+      break;
 
-      case '.':
-      case '>':
-        event.preventDefault();
-        onSpeedChange?.(0.25);
-        break;
+    case '.':
+    case '>':
+      event.preventDefault();
+      onSpeedChange?.(0.25);
+      break;
 
       // Дополнительные горячие клавиши
-      case 'j':
-        event.preventDefault();
-        onSeek?.(-10);
-        break;
+    case 'j':
+      event.preventDefault();
+      onSeek?.(-10);
+      break;
 
-      case 'l':
-        event.preventDefault();
-        onSeek?.(10);
-        break;
+    case 'l':
+      event.preventDefault();
+      onSeek?.(10);
+      break;
 
-      case 'k':
-        event.preventDefault();
-        onPlayPause?.();
-        break;
+    case 'k':
+      event.preventDefault();
+      onPlayPause?.();
+      break;
 
-      case 'home':
-        event.preventDefault();
-        onSeekToPercent?.(0);
-        break;
+    case 'home':
+      event.preventDefault();
+      onSeekToPercent?.(0);
+      break;
 
-      case 'end':
-        event.preventDefault();
-        onSeekToPercent?.(1);
-        break;
+    case 'end':
+      event.preventDefault();
+      onSeekToPercent?.(1);
+      break;
 
-      case 'escape':
-        event.preventDefault();
-        // Выход из полноэкранного режима
-        if (document.fullscreenElement) {
-          onFullscreen?.();
-        }
-        break;
+    case 'escape':
+      event.preventDefault();
+      // Выход из полноэкранного режима
+      if (document.fullscreenElement) {
+        onFullscreen?.();
+      }
+      break;
     }
   }, [
     shouldIgnoreEvent,
@@ -212,13 +212,13 @@ const useVideoHotkeys = ({
     onVoiceToggle,
     onSpeedChange,
     seekStep,
-    volumeStep
+    volumeStep,
   ]);
 
   const handleKeyUp = useCallback((event) => {
     const key = event.key.toLowerCase();
     pressedKeys.current.delete(key);
-    
+
     // Очищаем таймер повтора
     if (repeatTimeout.current) {
       clearTimeout(repeatTimeout.current);
@@ -246,7 +246,7 @@ const useVideoHotkeys = ({
       document.removeEventListener('keydown', handleKeyDown, true);
       document.removeEventListener('keyup', handleKeyUp, true);
       window.removeEventListener('blur', handleBlur);
-      
+
       if (repeatTimeout.current) {
         clearTimeout(repeatTimeout.current);
       }
@@ -262,7 +262,7 @@ const useVideoHotkeys = ({
   return {
     simulateKeyPress,
     isKeyPressed: (key) => pressedKeys.current.has(key.toLowerCase()),
-    pressedKeys: Array.from(pressedKeys.current)
+    pressedKeys: Array.from(pressedKeys.current),
   };
 };
 
@@ -287,7 +287,7 @@ export const useHotkeyTooltips = () => {
     { key: 'Ctrl+P', description: 'Предыдущий эпизод' },
     { key: 'Ctrl+S', description: 'Настройки субтитров' },
     { key: 'Home/End', description: 'Начало/Конец' },
-    { key: 'Esc', description: 'Выход из полного экрана' }
+    { key: 'Esc', description: 'Выход из полного экрана' },
   ];
 
   return hotkeys;

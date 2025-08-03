@@ -294,19 +294,19 @@ const AnimePage = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log(`🎬 Загрузка аниме ${id}...`);
-      
+
       // Загружаем информацию об аниме
       const animeData = await anilibriaV2Service.getAnimeById(id);
       const convertedAnime = anilibriaV2Service.convertAnimeToFormat(animeData);
-      
+
       setAnime(convertedAnime);
-      console.log(`✅ Аниме загружено:`, convertedAnime.title);
-      
+      console.log('✅ Аниме загружено:', convertedAnime.title);
+
       // Загружаем эпизоды
       loadEpisodes(id);
-      
+
     } catch (err) {
       console.error('Ошибка загрузки аниме:', err);
       setError(`Не удалось загрузить информацию об аниме: ${err.message}`);
@@ -318,19 +318,19 @@ const AnimePage = () => {
   const loadEpisodes = async (animeId) => {
     try {
       setEpisodesLoading(true);
-      
+
       console.log(`📺 Загрузка эпизодов для аниме ${animeId}...`);
-      
+
       const episodesData = await anilibriaV2Service.getAnimeEpisodes(animeId);
-      
+
       if (Array.isArray(episodesData)) {
-        const convertedEpisodes = episodesData.map(ep => 
-          anilibriaV2Service.convertEpisodeToFormat(ep)
+        const convertedEpisodes = episodesData.map(ep =>
+          anilibriaV2Service.convertEpisodeToFormat(ep),
         );
         setEpisodes(convertedEpisodes);
         console.log(`✅ Загружено ${convertedEpisodes.length} эпизодов`);
       }
-      
+
     } catch (err) {
       console.warn('Не удалось загрузить эпизоды:', err);
       setEpisodes([]);
@@ -366,7 +366,7 @@ const AnimePage = () => {
           <ErrorMessage>
             {error}
             <br />
-            <button 
+            <button
               onClick={loadAnime}
               style={{
                 marginTop: '15px',
@@ -375,7 +375,7 @@ const AnimePage = () => {
                 border: '1px solid currentColor',
                 borderRadius: '6px',
                 color: 'inherit',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
               Попробовать снова
@@ -411,8 +411,8 @@ const AnimePage = () => {
         <AnimeHeader>
           <PosterContainer>
             {anime.poster ? (
-              <Poster 
-                src={anime.poster} 
+              <Poster
+                src={anime.poster}
                 alt={anime.title}
                 onError={(e) => {
                   e.target.style.display = 'none';
@@ -484,11 +484,11 @@ const AnimePage = () => {
                   Эпизоды недоступны
                 </SecondaryButton>
               )}
-              
+
               <SecondaryButton>
                 ❤️ В избранное
               </SecondaryButton>
-              
+
               <SecondaryButton>
                 📝 В планы
               </SecondaryButton>
@@ -501,7 +501,7 @@ const AnimePage = () => {
           <SectionTitle>
             Эпизоды {episodesLoading && '(загрузка...)'}
           </SectionTitle>
-          
+
           {episodesLoading ? (
             <LoadingContainer>
               <LoadingSpinner size="32px" />
@@ -523,8 +523,8 @@ const AnimePage = () => {
                       Эп. {episode.number || index + 1}
                     </EpisodeNumber>
                     {episode.preview ? (
-                      <img 
-                        src={episode.preview} 
+                      <img
+                        src={episode.preview}
                         alt={episode.title}
                         onError={(e) => {
                           e.target.style.display = 'none';
@@ -534,7 +534,7 @@ const AnimePage = () => {
                       <span>🎬</span>
                     )}
                   </EpisodeImage>
-                  
+
                   <EpisodeInfo>
                     <EpisodeTitle>
                       {episode.title || `Эпизод ${episode.number || index + 1}`}
@@ -543,7 +543,7 @@ const AnimePage = () => {
                       <div style={{
                         fontSize: '0.9rem',
                         color: 'var(--color-text-secondary)',
-                        marginTop: '5px'
+                        marginTop: '5px',
                       }}>
                         {Math.round(episode.duration / 60)} мин
                       </div>

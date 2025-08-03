@@ -7,7 +7,7 @@ import { getVideoSettingsDB, saveVideoSettingsDB } from './indexedDBProgress';
 const DEFAULT_SCHEDULE = {
   lightStart: '06:00', // Светлая тема с 6:00
   darkStart: '20:00',  // Темная тема с 20:00
-  enabled: false
+  enabled: false,
 };
 
 /**
@@ -44,7 +44,7 @@ export const getThemeForTime = (schedule = DEFAULT_SCHEDULE) => {
     } else {
       return 'dark';
     }
-  } 
+  }
   // Если светлая тема начинается раньше темной (например, 06:00 - 20:00)
   else {
     if (currentMinutes >= darkStartMinutes && currentMinutes < lightStartMinutes) {
@@ -63,7 +63,7 @@ export const getAutoThemeSettings = async () => {
     const settings = await getVideoSettingsDB();
     return {
       ...DEFAULT_SCHEDULE,
-      ...settings.autoTheme
+      ...settings.autoTheme,
     };
   } catch (error) {
     console.error('Ошибка загрузки настроек автотемы:', error);
@@ -82,8 +82,8 @@ export const saveAutoThemeSettings = async (newSettings) => {
       autoTheme: {
         ...DEFAULT_SCHEDULE,
         ...currentSettings.autoTheme,
-        ...newSettings
-      }
+        ...newSettings,
+      },
     });
     return true;
   } catch (error) {
@@ -102,17 +102,17 @@ export const initAutoThemeSwitch = (onThemeChange) => {
   const checkAndSwitchTheme = async () => {
     try {
       const settings = await getAutoThemeSettings();
-      
+
       if (!settings.enabled) {
         return;
       }
 
       const requiredTheme = getThemeForTime(settings);
-      
+
       if (currentTheme !== requiredTheme) {
         currentTheme = requiredTheme;
         onThemeChange?.(requiredTheme);
-        
+
         console.log(`Автопереключение темы: ${requiredTheme} в ${getCurrentTime()}`);
       }
     } catch (error) {
@@ -123,7 +123,7 @@ export const initAutoThemeSwitch = (onThemeChange) => {
   const startAutoSwitch = () => {
     // Проверяем сразу при инициализации
     checkAndSwitchTheme();
-    
+
     // Затем проверяем каждую минуту
     intervalId = setInterval(checkAndSwitchTheme, 60000);
   };
@@ -137,7 +137,7 @@ export const initAutoThemeSwitch = (onThemeChange) => {
 
   const updateSettings = async (newSettings) => {
     await saveAutoThemeSettings(newSettings);
-    
+
     if (newSettings.enabled) {
       stopAutoSwitch();
       startAutoSwitch();
@@ -159,7 +159,7 @@ export const initAutoThemeSwitch = (onThemeChange) => {
     stop: stopAutoSwitch,
     updateSettings,
     getCurrentTheme: () => currentTheme,
-    checkNow: checkAndSwitchTheme
+    checkNow: checkAndSwitchTheme,
   };
 };
 
@@ -182,7 +182,7 @@ export const useAutoThemeSwitch = (onThemeChange) => {
   return {
     updateSettings: (settings) => autoSwitchRef.current?.updateSettings(settings),
     checkNow: () => autoSwitchRef.current?.checkNow(),
-    getCurrentTheme: () => autoSwitchRef.current?.getCurrentTheme()
+    getCurrentTheme: () => autoSwitchRef.current?.getCurrentTheme(),
   };
 };
 
@@ -193,28 +193,28 @@ export const THEME_PRESETS = {
   standard: {
     name: 'Стандартное',
     lightStart: '06:00',
-    darkStart: '20:00'
+    darkStart: '20:00',
   },
   earlyBird: {
     name: 'Ранняя пташка',
     lightStart: '05:30',
-    darkStart: '19:00'
+    darkStart: '19:00',
   },
   nightOwl: {
     name: 'Сова',
     lightStart: '08:00',
-    darkStart: '22:00'
+    darkStart: '22:00',
   },
   workday: {
     name: 'Рабочий день',
     lightStart: '07:00',
-    darkStart: '18:00'
+    darkStart: '18:00',
   },
   student: {
     name: 'Студенческое',
     lightStart: '09:00',
-    darkStart: '23:00'
-  }
+    darkStart: '23:00',
+  },
 };
 
 /**
@@ -224,7 +224,7 @@ export const getTimeUntilNextSwitch = (schedule = DEFAULT_SCHEDULE) => {
   const currentMinutes = timeToMinutes(getCurrentTime());
   const lightStartMinutes = timeToMinutes(schedule.lightStart);
   const darkStartMinutes = timeToMinutes(schedule.darkStart);
-  
+
   const minutesInDay = 24 * 60;
   let nextSwitchMinutes;
   let nextTheme;
@@ -255,8 +255,8 @@ export const getTimeUntilNextSwitch = (schedule = DEFAULT_SCHEDULE) => {
     }
   }
 
-  const minutesUntilSwitch = nextSwitchMinutes > currentMinutes ? 
-    nextSwitchMinutes - currentMinutes : 
+  const minutesUntilSwitch = nextSwitchMinutes > currentMinutes ?
+    nextSwitchMinutes - currentMinutes :
     nextSwitchMinutes + minutesInDay - currentMinutes;
 
   const hours = Math.floor(minutesUntilSwitch / 60);
@@ -267,7 +267,7 @@ export const getTimeUntilNextSwitch = (schedule = DEFAULT_SCHEDULE) => {
     minutes,
     totalMinutes: minutesUntilSwitch,
     nextTheme,
-    nextSwitchTime: `${Math.floor(nextSwitchMinutes / 60).toString().padStart(2, '0')}:${(nextSwitchMinutes % 60).toString().padStart(2, '0')}`
+    nextSwitchTime: `${Math.floor(nextSwitchMinutes / 60).toString().padStart(2, '0')}:${(nextSwitchMinutes % 60).toString().padStart(2, '0')}`,
   };
 };
 
@@ -299,7 +299,7 @@ export const validateSchedule = (schedule) => {
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 };
 
@@ -312,5 +312,5 @@ export default {
   THEME_PRESETS,
   getTimeUntilNextSwitch,
   isValidTime,
-  validateSchedule
+  validateSchedule,
 };

@@ -94,7 +94,7 @@ const AnilibriaV2Test = () => {
     setError(null);
     setCurrentTest(testName);
     setData(null);
-    
+
     try {
       console.log(`🧪 Запуск теста: ${testName}`);
       const result = await testFunction();
@@ -110,26 +110,26 @@ const AnilibriaV2Test = () => {
 
   const tests = {
     'Получить последние релизы': () => anilibriaV2Service.getLatestReleases(5),
-    
+
     'Получить конкретный релиз': () => anilibriaV2Service.getRelease(9990),
-    
+
     'Получить релиз с эпизодами': () => anilibriaV2Service.getReleaseWithEpisodes(9990),
-    
+
     'Поиск релизов': () => anilibriaV2Service.searchReleases('меча', 1, 5),
-    
+
     'Рекомендуемые релизы': () => anilibriaV2Service.getRecommendedReleases(5),
-    
+
     'Случайные релизы': () => anilibriaV2Service.getRandomReleases(3),
-    
+
     'Тест совместимости - getAnimeById': () => anilibriaV2Service.getAnimeById(9990),
-    
+
     'Тест совместимости - getEpisodeById': () => anilibriaV2Service.getEpisodeById(9990, 1),
-    
+
     'Тест видео - getAnimeVideo': async () => {
       const result = await anilibriaV2Service.getAnimeVideo(9990, 1);
       setVideoData(result);
       return result;
-    }
+    },
   };
 
   const testVideoPlayer = () => {
@@ -149,7 +149,7 @@ const AnilibriaV2Test = () => {
   return (
     <TestContainer>
       <TestTitle>🧪 Тестирование AniLiberty API v2</TestTitle>
-      
+
       <TestSection>
         <h3>📡 API Тесты</h3>
         <div>

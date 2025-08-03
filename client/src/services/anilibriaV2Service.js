@@ -21,7 +21,7 @@ anilibriaV2Api.interceptors.response.use(
       throw new Error(Object.values(error.response.data.errors).flat().join(', '));
     }
     throw new Error(error.message || 'Ошибка при обращении к AniLiberty API');
-  }
+  },
 );
 
 export const anilibriaV2Service = {
@@ -30,7 +30,7 @@ export const anilibriaV2Service = {
     try {
       const { perPage = 10, page = 1 } = params;
       const response = await anilibriaV2Api.get('/anime/releases/latest', {
-        params: { limit: perPage }
+        params: { limit: perPage },
       });
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
@@ -43,7 +43,7 @@ export const anilibriaV2Service = {
     try {
       const { perPage = 10, page = 1 } = params;
       const response = await anilibriaV2Api.get('/anime/releases/latest', {
-        params: { limit: perPage }
+        params: { limit: perPage },
       });
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
@@ -56,7 +56,7 @@ export const anilibriaV2Service = {
     try {
       const { perPage = 10, page = 1 } = params;
       const response = await anilibriaV2Api.get('/anime/releases/latest', {
-        params: { limit: perPage }
+        params: { limit: perPage },
       });
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
@@ -78,7 +78,7 @@ export const anilibriaV2Service = {
   async getAnimeEpisodes(id) {
     try {
       const response = await anilibriaV2Api.get(`/anime/releases/${id}`, {
-        params: { include: 'episodes' }
+        params: { include: 'episodes' },
       });
       return response.data?.episodes || [];
     } catch (error) {
@@ -105,8 +105,8 @@ export const anilibriaV2Service = {
           search: query,
           limit: perPage,
           page,
-          ...filters
-        }
+          ...filters,
+        },
       });
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
@@ -141,7 +141,7 @@ export const anilibriaV2Service = {
 
     // Новая структура API - поддержка react-player
     if (episode.video_url) return episode.video_url;
-    
+
     const qualityMap = {
       '1080': episode.hls_1080 || episode.video_1080,
       '720': episode.hls_720 || episode.video_720,
@@ -149,7 +149,7 @@ export const anilibriaV2Service = {
     };
 
     // Возвращаем запрошенное качество или fallback к доступному
-    return qualityMap[quality] || 
+    return qualityMap[quality] ||
            episode.hls_1080 || episode.video_1080 ||
            episode.hls_720 || episode.video_720 ||
            episode.hls_480 || episode.video_480 ||
@@ -162,24 +162,24 @@ export const anilibriaV2Service = {
 
     const qualities = [];
     if (episode.hls_1080 || episode.video_1080) {
-      qualities.push({ 
-        height: 1080, 
-        src: episode.hls_1080 || episode.video_1080, 
-        label: '1080p' 
+      qualities.push({
+        height: 1080,
+        src: episode.hls_1080 || episode.video_1080,
+        label: '1080p',
       });
     }
     if (episode.hls_720 || episode.video_720) {
-      qualities.push({ 
-        height: 720, 
-        src: episode.hls_720 || episode.video_720, 
-        label: '720p' 
+      qualities.push({
+        height: 720,
+        src: episode.hls_720 || episode.video_720,
+        label: '720p',
       });
     }
     if (episode.hls_480 || episode.video_480) {
-      qualities.push({ 
-        height: 480, 
-        src: episode.hls_480 || episode.video_480, 
-        label: '480p' 
+      qualities.push({
+        height: 480,
+        src: episode.hls_480 || episode.video_480,
+        label: '480p',
       });
     }
 
@@ -229,7 +229,7 @@ export const anilibriaV2Service = {
       duration: episode.duration,
       sortOrder: episode.sort_order || episode.number,
       preview: this.getOptimizedImageUrl(episode.preview),
-      
+
       // Видео URL'ы
       videoUrl: this.getVideoUrl(episode, '720'),
       videoUrls: {
@@ -265,8 +265,8 @@ export const anilibriaV2Service = {
   getGenres(genres) {
     if (!genres) return [];
     if (Array.isArray(genres)) {
-      return genres.map(genre => 
-        typeof genre === 'string' ? genre : genre.name || genre.title
+      return genres.map(genre =>
+        typeof genre === 'string' ? genre : genre.name || genre.title,
       );
     }
     return [];
@@ -275,12 +275,12 @@ export const anilibriaV2Service = {
   // Получить оптимизированный URL изображения
   getOptimizedImageUrl(imageObject) {
     if (!imageObject) return null;
-    
+
     // Если это уже готовый URL
     if (typeof imageObject === 'string') {
       return imageObject.startsWith('http') ? imageObject : `https://aniliberty.top${imageObject}`;
     }
-    
+
     // Приоритет: optimized > preview > src > thumbnail
     if (imageObject.optimized?.preview) {
       return `https://aniliberty.top${imageObject.optimized.preview}`;
@@ -294,12 +294,12 @@ export const anilibriaV2Service = {
     if (imageObject.thumbnail) {
       return `https://aniliberty.top${imageObject.thumbnail}`;
     }
-    
+
     return null;
   },
 
   // МЕТОДЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ
-  
+
   // Получить релиз (для старого кода)
   async getRelease(idOrAlias, include = '') {
     try {
@@ -314,12 +314,12 @@ export const anilibriaV2Service = {
     try {
       const [anime, episodes] = await Promise.all([
         this.getAnimeById(idOrAlias),
-        this.getAnimeEpisodes(idOrAlias)
+        this.getAnimeEpisodes(idOrAlias),
       ]);
-      
+
       return {
         ...anime,
-        episodes: episodes
+        episodes,
       };
     } catch (error) {
       throw new Error(`Ошибка получения релиза с эпизодами ${idOrAlias}: ${error.message}`);
@@ -335,16 +335,16 @@ export const anilibriaV2Service = {
   async getEpisodeByAnimeAndNumber(animeId, episodeNumber) {
     try {
       const episodes = await this.getAnimeEpisodes(animeId);
-      
+
       if (!episodes || !Array.isArray(episodes)) {
         throw new Error('Эпизоды не найдены');
       }
 
       // Ищем эпизод по номеру
-      const episode = episodes.find(ep => 
-        ep.ordinal === parseFloat(episodeNumber) || 
+      const episode = episodes.find(ep =>
+        ep.ordinal === parseFloat(episodeNumber) ||
         ep.number === parseInt(episodeNumber) ||
-        ep.sort_order === parseInt(episodeNumber)
+        ep.sort_order === parseInt(episodeNumber),
       );
 
       if (!episode) {
@@ -377,7 +377,7 @@ export const anilibriaV2Service = {
         qualities: this.getAvailableQualities(episode),
         type: videoUrl.includes('.m3u8') ? 'hls' : 'video',
         episode: this.convertEpisodeToFormat(episode),
-        success: true
+        success: true,
       };
     } catch (error) {
       throw new Error(`Ошибка получения видео для эпизода ${episodeId}: ${error.message}`);
