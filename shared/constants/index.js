@@ -280,7 +280,7 @@ export const LIMITS = {
   REPORT_DESCRIPTION_MAX_LENGTH: 500,
   
   // Пагинация
-  DEFAULT_PAGE_SIZE: 20,
+  DEFAULT_PAGE_SIZE: 50,
   MAX_PAGE_SIZE: 100,
   
   // Файлы

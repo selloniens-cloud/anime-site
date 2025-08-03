@@ -6,7 +6,7 @@ const { HTTP_STATUS } = require('../../shared/constants/constants');
  */
 const getPopular = async (req, res) => {
   try {
-    const { limit = 24, page = 1 } = req.query;
+    const { limit = 50, page = 1 } = req.query;
     
     const data = await anilibriaService.getPopular({
       limit: parseInt(limit),

@@ -53,7 +53,7 @@ const LIMITS = {
   MAX_RATING: 10,
   
   // Пагинация
-  DEFAULT_PAGE_SIZE: 20,
+  DEFAULT_PAGE_SIZE: 50,
   MAX_PAGE_SIZE: 100,
   
   // Файлы

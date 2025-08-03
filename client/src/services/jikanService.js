@@ -1,7 +1,7 @@
 const JIKAN_API = 'https://api.jikan.moe/v4';
 
 class JikanService {
-  async getPopularAnime(limit = 20) {
+  async getPopularAnime(limit = 50) {
     try {
       const response = await fetch(`${JIKAN_API}/top/anime?limit=${limit}`);
       const data = await response.json();
@@ -39,7 +39,7 @@ class JikanService {
     };
   }
 
-  async searchAnime(query, limit = 20) {
+  async searchAnime(query, limit = 50) {
     try {
       const response = await fetch(`${JIKAN_API}/anime?q=${query}&limit=${limit}`);
       const data = await response.json();

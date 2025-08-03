@@ -11,7 +11,7 @@ class AnimeController {
     try {
       const {
         page = 1,
-        limit = 20,
+        limit = 50,
         genres,
         year,
         status,
@@ -124,7 +124,7 @@ class AnimeController {
   // Получение популярного аниме
   async getPopularAnime(req, res) {
     try {
-      const { limit = 20 } = req.query;
+      const { limit = 50 } = req.query;
 
       const anime = await Anime.getPopular(parseInt(limit));
 
@@ -149,7 +149,7 @@ class AnimeController {
   // Получение топ рейтингового аниме
   async getTopRatedAnime(req, res) {
     try {
-      const { limit = 20 } = req.query;
+      const { limit = 50 } = req.query;
 
       const anime = await Anime.getTopRated(parseInt(limit));
 
@@ -174,7 +174,7 @@ class AnimeController {
   // Получение недавно добавленного аниме
   async getRecentAnime(req, res) {
     try {
-      const { limit = 20 } = req.query;
+      const { limit = 50 } = req.query;
 
       const anime = await Anime.getRecent(parseInt(limit));
 

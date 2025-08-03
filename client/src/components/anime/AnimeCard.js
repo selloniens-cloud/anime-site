@@ -268,12 +268,22 @@ const getAnimeTitle = (anime) => {
 // Утилита для получения постера
 const getAnimePoster = (anime) => {
   // Прямая ссылка на постер
-  if (typeof anime.poster === 'string') return anime.poster;
+  if (typeof anime.poster === 'string' && anime.poster) return anime.poster;
   
-  // Структура AniLibria API
-  if (anime.posters?.medium?.url) return anime.posters.medium.url;
-  if (anime.posters?.small?.url) return anime.posters.small.url;
-  if (anime.posters?.original?.url) return anime.posters.original.url;
+  // Структура AniLibria API - исправляем URL
+  if (anime.posters?.medium?.url) {
+    const url = anime.posters.medium.url;
+    // Проверяем если URL уже абсолютный
+    return url.startsWith('http') ? url : `https://www.anilibria.tv${url}`;
+  }
+  if (anime.posters?.small?.url) {
+    const url = anime.posters.small.url;
+    return url.startsWith('http') ? url : `https://www.anilibria.tv${url}`;
+  }
+  if (anime.posters?.original?.url) {
+    const url = anime.posters.original.url;
+    return url.startsWith('http') ? url : `https://www.anilibria.tv${url}`;
+  }
   
   // Структура нашей модели
   if (anime.images?.poster?.medium) return anime.images.poster.medium;
@@ -308,12 +318,20 @@ const getAnimeId = (anime) => {
 const AnimeCard = ({ anime }) => {
   const [isFavorite, setIsFavorite] = useState(anime.isFavorite || false);
   const [isInWatchlist, setIsInWatchlist] = useState(anime.isInWatchlist || false);
+  const [imageError, setImageError] = useState(false);
   const { isAuthenticated } = useAuth();
 
   const animeId = getAnimeId(anime);
   const title = getAnimeTitle(anime);
   const poster = getAnimePoster(anime);
   const rating = getAnimeRating(anime);
+
+  const handleImageError = (e) => {
+    console.log('Image failed to load:', poster);
+    setImageError(true);
+    // Не скрываем изображение сразу, а заменяем на fallback
+    e.target.src = '/no-image.svg';
+  };
 
   const handleFavoriteToggle = async (e) => {
     e.preventDefault();
@@ -371,17 +389,24 @@ const AnimeCard = ({ anime }) => {
       whileHover={{ y: -4 }}
     >
       <ImageContainer>
-        {poster ? (
+        {poster && !imageError ? (
           <AnimeImage
             src={poster}
             alt={title}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
+            onError={handleImageError}
           />
         ) : (
-          <ImagePlaceholder />
+          <ImagePlaceholder>
+            <img 
+              src="/no-image.svg" 
+              alt="Изображение не найдено"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+            />
+          </ImagePlaceholder>
         )}
 
         {anime.status && (
