@@ -144,10 +144,12 @@ const useVideoHotkeys = ({
     case '7':
     case '8':
     case '9':
-      event.preventDefault();
-      const percent = parseInt(key) / 10;
-      onSeekToPercent?.(percent);
-      break;
+      {
+        event.preventDefault();
+        const percent = parseInt(key) / 10;
+        onSeekToPercent?.(percent);
+        break;
+      }
 
       // Изменение скорости воспроизведения
     case ',':
