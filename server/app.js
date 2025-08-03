@@ -19,6 +19,8 @@ const externalRoutes = require('./routes/external');
 const watchlistRoutes = require('./routes/watchlist');
 const anilibriaRoutes = require('./routes/anilibria');
 const videoRoutes = require('./routes/video');
+const favoritesRoutes = require('./routes/favorites');
+const watchHistoryRoutes = require('./routes/watchHistory');
 // New AniLiberty API routes
 const apiRoutes = require('./routes/api');
 
